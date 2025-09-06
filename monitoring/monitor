@@ -4,11 +4,23 @@
 
 set -e
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
+# Terminal color codes - minimal palette
+DIM='\033[2m'
+BRIGHT='\033[1m'
+NORMAL='\033[0m'
+INVERSE='\033[7m'
+
+# Monochrome color scheme
+WHITE='\033[37m'
+GRAY='\033[90m'
+DARK_GRAY='\033[30m'
+LIGHT_GRAY='\033[37m'
+
+# Accent colors - used sparingly
+GREEN='\033[32m'
+RED='\033[31m'
+YELLOW='\033[33m'
+CYAN='\033[36m'
 NC='\033[0m' # No Color
 
 # Configuration
@@ -16,101 +28,203 @@ MONITOR_URL="http://localhost:8050"
 SERVICE_NAME="gob-monitoring"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Terminal width detection
+TERM_WIDTH=$(tput cols 2>/dev/null || echo 80)
+
+# Draw a line across terminal
+draw_line() {
+    local char="${1:-─}"
+    local width="${2:-$TERM_WIDTH}"
+    printf '%*s\n' "$width" '' | tr ' ' "$char"
+}
+
+# Draw a box border
+draw_box_top() {
+    echo -e "${DIM}┌$(draw_line '─' $((TERM_WIDTH - 2)))┐${NC}"
+}
+
+draw_box_bottom() {
+    echo -e "${DIM}└$(draw_line '─' $((TERM_WIDTH - 2)))┘${NC}"
+}
+
+draw_box_line() {
+    local content="$1"
+    local padding=$((TERM_WIDTH - 4 - ${#content}))
+    echo -e "${DIM}│${NC} $content$(printf '%*s' $padding '')${DIM}│${NC}"
+}
+
 print_status() {
     local status="$1"
     local message="$2"
     case $status in
-        "success") echo -e "${GREEN}✅ ${message}${NC}" ;;
-        "error") echo -e "${RED}❌ ${message}${NC}" ;;
-        "warning") echo -e "${YELLOW}⚠️  ${message}${NC}" ;;
-        "info") echo -e "${CYAN}ℹ️  ${message}${NC}" ;;
-        *) echo -e "${NC}${message}" ;;
+        "success") 
+            echo -e "  ${GREEN}[OK]${NC}     ${message}"
+            ;;
+        "error") 
+            echo -e "  ${RED}[FAIL]${NC}   ${message}"
+            ;;
+        "warning") 
+            echo -e "  ${YELLOW}[WARN]${NC}   ${message}"
+            ;;
+        "info") 
+            echo -e "  ${DIM}[INFO]${NC}   ${message}"
+            ;;
+        "running")
+            echo -e "  ${GREEN}[LIVE]${NC}   ${message}"
+            ;;
+        "stopped")
+            echo -e "  ${GRAY}[DOWN]${NC}   ${message}"
+            ;;
+        *) 
+            echo -e "           ${message}"
+            ;;
     esac
 }
 
 print_header() {
-    echo -e "${CYAN}=== GOB Monitoring Dashboard ===${NC}"
+    clear
+    echo
+    echo -e "${DIM}$(draw_line '━' $TERM_WIDTH)${NC}"
+    echo -e "  ${BRIGHT}GOB MONITORING SYSTEM${NC}  ${DIM}│${NC}  Backend Process Monitor"
+    echo -e "${DIM}$(draw_line '━' $TERM_WIDTH)${NC}"
+    echo
 }
 
 show_help() {
     print_header
+    
+    echo -e "  ${DIM}USAGE${NC}"
+    echo -e "  ${BRIGHT}monitor${NC} [command]"
     echo
-    echo -e "${YELLOW}Usage:${NC} monitor [command]"
+    
+    echo -e "  ${DIM}COMMANDS${NC}"
+    echo -e "  ${BRIGHT}open${NC}       Launch monitoring dashboard in browser"
+    echo -e "  ${BRIGHT}start${NC}      Start monitoring service"
+    echo -e "  ${BRIGHT}stop${NC}       Stop monitoring service" 
+    echo -e "  ${BRIGHT}restart${NC}    Restart monitoring service"
+    echo -e "  ${BRIGHT}status${NC}     Show service status"
+    echo -e "  ${BRIGHT}logs${NC}       Display service logs"
+    echo -e "  ${BRIGHT}install${NC}    Install service for auto-start"
+    echo -e "  ${BRIGHT}uninstall${NC}  Remove auto-start service"
+    echo -e "  ${BRIGHT}help${NC}       Show this help message"
     echo
-    echo -e "${YELLOW}Commands:${NC}"
-    echo -e "  ${GREEN}open${NC}           Open monitoring dashboard in browser"
-    echo -e "  ${GREEN}start${NC}          Start monitoring service"
-    echo -e "  ${GREEN}stop${NC}           Stop monitoring service"
-    echo -e "  ${GREEN}restart${NC}        Restart monitoring service"
-    echo -e "  ${GREEN}status${NC}         Show service status"
-    echo -e "  ${GREEN}logs${NC}           Show service logs"
-    echo -e "  ${GREEN}install${NC}        Install service for auto-start"
-    echo -e "  ${GREEN}uninstall${NC}      Remove auto-start service"
-    echo -e "  ${GREEN}help${NC}           Show this help message"
+    
+    echo -e "  ${DIM}QUICK START${NC}"
+    echo -e "  ${DIM}│${NC}"
+    echo -e "  ${DIM}├─${NC} monitor open      ${DIM}# Launch dashboard${NC}"
+    echo -e "  ${DIM}├─${NC} monitor status    ${DIM}# Check service${NC}"
+    echo -e "  ${DIM}└─${NC} monitor install   ${DIM}# Enable auto-start${NC}"
     echo
-    echo -e "${YELLOW}Examples:${NC}"
-    echo -e "  monitor open        # Open dashboard"
-    echo -e "  monitor status      # Check if running"
-    echo -e "  monitor install     # Enable auto-start on boot"
+    
+    echo -e "${DIM}$(draw_line '─' $TERM_WIDTH)${NC}"
+    echo -e "  ${DIM}Dashboard URL:${NC} ${BRIGHT}${MONITOR_URL}${NC}"
     echo
-    echo -e "${YELLOW}Dashboard URL:${NC} ${MONITOR_URL}"
 }
 
 open_dashboard() {
     print_header
-    print_status "info" "Opening GOB Monitoring Dashboard..."
+    print_status "info" "Initializing dashboard connection"
+    echo
     
     # Check if service is running first
+    echo -e "  ${DIM}Checking service status...${NC}"
     if ! curl -s -f "$MONITOR_URL" > /dev/null 2>&1; then
-        print_status "warning" "Monitoring service not responding, attempting to start..."
-        start_service
-        sleep 5
+        echo -e "  ${YELLOW}[!]${NC} Service not responding"
+        echo -e "  ${DIM}Starting monitoring service...${NC}"
+        start_service_silent
+        sleep 3
+        echo
     fi
     
     # Open browser
+    echo -e "  ${DIM}Launching browser...${NC}"
     if command -v xdg-open >/dev/null 2>&1; then
-        xdg-open "$MONITOR_URL"
-        print_status "success" "Dashboard opened in browser"
+        xdg-open "$MONITOR_URL" 2>/dev/null
+        print_status "success" "Dashboard launched"
+        echo
+        echo -e "${DIM}$(draw_line '─' $TERM_WIDTH)${NC}"
+        echo -e "  ${BRIGHT}URL:${NC} ${MONITOR_URL}"
     elif command -v open >/dev/null 2>&1; then  # macOS
-        open "$MONITOR_URL"
-        print_status "success" "Dashboard opened in browser"
+        open "$MONITOR_URL" 2>/dev/null
+        print_status "success" "Dashboard launched"
+        echo
+        echo -e "${DIM}$(draw_line '─' $TERM_WIDTH)${NC}"
+        echo -e "  ${BRIGHT}URL:${NC} ${MONITOR_URL}"
     else
-        print_status "warning" "Could not auto-open browser. Please visit: $MONITOR_URL"
+        echo
+        echo -e "${DIM}$(draw_line '─' $TERM_WIDTH)${NC}"
+        echo -e "  ${YELLOW}[!]${NC} Manual browser launch required"
+        echo -e "  ${BRIGHT}URL:${NC} ${MONITOR_URL}"
+    fi
+    echo
+}
+
+# Silent version for internal use
+start_service_silent() {
+    if systemctl --user is-active --quiet "$SERVICE_NAME" 2>/dev/null; then
+        return 0
+    fi
+    
+    if systemctl --user start "$SERVICE_NAME" 2>/dev/null; then
+        return 0
+    elif sudo systemctl start "$SERVICE_NAME" 2>/dev/null; then
+        return 0
+    else
+        cd "$SCRIPT_DIR"
+        nohup python server.py --port 8050 >/dev/null 2>&1 &
+        sleep 2
     fi
 }
 
 start_service() {
     print_header
-    print_status "info" "Starting monitoring service..."
+    echo -e "  ${DIM}STARTING SERVICE${NC}"
+    echo
     
+    # Check if already running
+    echo -e "  ${DIM}Checking current state...${NC}"
     if systemctl --user is-active --quiet "$SERVICE_NAME" 2>/dev/null; then
-        print_status "warning" "Service is already running"
+        print_status "running" "Service already active"
+        echo
+        echo -e "${DIM}$(draw_line '─' $TERM_WIDTH)${NC}"
+        echo -e "  ${DIM}Dashboard:${NC} ${MONITOR_URL}"
+        echo
         return 0
     fi
     
     # Try to start as user service first, then system service
+    echo -e "  ${DIM}Initializing service...${NC}"
     if systemctl --user start "$SERVICE_NAME" 2>/dev/null; then
         print_status "success" "User service started"
     elif sudo systemctl start "$SERVICE_NAME" 2>/dev/null; then
         print_status "success" "System service started"
     else
         # Fallback: start directly
-        print_status "info" "Starting service directly..."
+        echo -e "  ${DIM}Starting process directly...${NC}"
         cd "$SCRIPT_DIR"
         nohup python server.py --port 8050 >/dev/null 2>&1 &
         sleep 3
         if curl -s -f "$MONITOR_URL" > /dev/null 2>&1; then
-            print_status "success" "Service started directly"
+            print_status "success" "Service started"
         else
             print_status "error" "Failed to start service"
+            echo
             return 1
         fi
     fi
+    
+    echo
+    echo -e "${DIM}$(draw_line '─' $TERM_WIDTH)${NC}"
+    echo -e "  ${DIM}Dashboard:${NC} ${MONITOR_URL}"
+    echo
 }
 
 stop_service() {
     print_header
-    print_status "info" "Stopping monitoring service..."
+    echo -e "  ${DIM}STOPPING SERVICE${NC}"
+    echo
+    
+    echo -e "  ${DIM}Terminating process...${NC}"
     
     # Try to stop user service, then system service
     if systemctl --user stop "$SERVICE_NAME" 2>/dev/null; then
@@ -120,45 +234,91 @@ stop_service() {
     else
         # Fallback: kill process
         if pkill -f "python server.py.*port 8050"; then
-            print_status "success" "Service stopped"
+            print_status "success" "Process terminated"
         else
-            print_status "warning" "No service found to stop"
+            print_status "stopped" "No active service found"
         fi
     fi
+    
+    echo
+    echo -e "${DIM}$(draw_line '─' $TERM_WIDTH)${NC}"
+    echo
 }
 
 restart_service() {
     print_header
-    print_status "info" "Restarting monitoring service..."
-    stop_service
+    echo -e "  ${DIM}RESTARTING SERVICE${NC}"
+    echo
+    
+    echo -e "  ${DIM}Phase 1: Stopping current instance...${NC}"
+    # Stop silently
+    if systemctl --user stop "$SERVICE_NAME" 2>/dev/null || \
+       sudo systemctl stop "$SERVICE_NAME" 2>/dev/null || \
+       pkill -f "python server.py.*port 8050" 2>/dev/null; then
+        echo -e "  ${GREEN}[✓]${NC} Stopped"
+    fi
+    
     sleep 2
-    start_service
+    
+    echo -e "  ${DIM}Phase 2: Starting new instance...${NC}"
+    start_service_silent
+    if curl -s -f "$MONITOR_URL" > /dev/null 2>&1; then
+        echo -e "  ${GREEN}[✓]${NC} Started"
+    else
+        echo -e "  ${RED}[×]${NC} Failed to start"
+    fi
+    
+    echo
+    echo -e "${DIM}$(draw_line '─' $TERM_WIDTH)${NC}"
+    echo -e "  ${DIM}Dashboard:${NC} ${MONITOR_URL}"
+    echo
 }
 
 show_status() {
     print_header
+    echo -e "  ${DIM}SERVICE STATUS${NC}"
+    echo
     
-    # Check if service is responding
+    # Main status check
+    echo -e "  ${DIM}Connection test...${NC}"
     if curl -s -f "$MONITOR_URL" > /dev/null 2>&1; then
-        print_status "success" "Monitoring dashboard is running"
-        print_status "info" "URL: $MONITOR_URL"
+        print_status "running" "Dashboard responding"
+        echo
+        echo -e "  ${DIM}Service Details:${NC}"
+        echo -e "  ${DIM}├─${NC} URL: ${BRIGHT}${MONITOR_URL}${NC}"
+        
+        # Check systemd service
+        if systemctl --user is-active --quiet "$SERVICE_NAME" 2>/dev/null; then
+            local status=$(systemctl --user is-active $SERVICE_NAME 2>/dev/null)
+            echo -e "  ${DIM}├─${NC} Type: User Service"
+            echo -e "  ${DIM}├─${NC} State: ${GREEN}${status}${NC}"
+        elif systemctl is-active --quiet "$SERVICE_NAME" 2>/dev/null; then
+            local status=$(systemctl is-active $SERVICE_NAME 2>/dev/null)
+            echo -e "  ${DIM}├─${NC} Type: System Service"
+            echo -e "  ${DIM}├─${NC} State: ${GREEN}${status}${NC}"
+        fi
+        
+        # Check for process
+        if pgrep -f "python server.py.*port 8050" >/dev/null; then
+            local pid=$(pgrep -f 'python server.py.*port 8050')
+            echo -e "  ${DIM}└─${NC} PID: ${pid}"
+        fi
     else
-        print_status "error" "Monitoring dashboard is not responding"
+        print_status "stopped" "Dashboard not responding"
+        echo
+        echo -e "  ${DIM}Service appears to be offline${NC}"
+        
+        # Check if service exists but not responding
+        if systemctl --user is-active --quiet "$SERVICE_NAME" 2>/dev/null || \
+           systemctl is-active --quiet "$SERVICE_NAME" 2>/dev/null; then
+            echo -e "  ${YELLOW}[!]${NC} Service registered but not responding"
+            echo -e "  ${DIM}Try: monitor restart${NC}"
+        fi
     fi
     
-    # Check systemd service status
-    if systemctl --user is-active --quiet "$SERVICE_NAME" 2>/dev/null; then
-        print_status "info" "User service status: $(systemctl --user is-active $SERVICE_NAME 2>/dev/null || echo 'inactive')"
-    elif systemctl is-active --quiet "$SERVICE_NAME" 2>/dev/null; then
-        print_status "info" "System service status: $(systemctl is-active $SERVICE_NAME 2>/dev/null || echo 'inactive')"
-    else
-        print_status "warning" "No systemd service found"
-    fi
-    
-    # Check for direct processes
-    if pgrep -f "python server.py.*port 8050" >/dev/null; then
-        print_status "info" "Direct process running (PID: $(pgrep -f 'python server.py.*port 8050'))"
-    fi
+    echo
+    echo -e "${DIM}$(draw_line '─' $TERM_WIDTH)${NC}"
+    echo
 }
 
 show_logs() {
