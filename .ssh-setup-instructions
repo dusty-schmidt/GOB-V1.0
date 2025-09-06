@@ -1,0 +1,27 @@
+# SSH Key Setup Instructions for GOB Repository
+
+## SSH Key Generated: 2025-09-06
+
+**Public Key (Add to GitHub):**
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF/mj8uV/VT0qSmUUr4Xe2Nm3QXgjmVAO5ErQ3BZ3Vvr dustin.schmidt.86@proton.me
+
+## Steps to Add to GitHub:
+1. Go to: https://github.com/settings/keys
+2. Click "New SSH key"
+3. Title: "GOB Development Machine"
+4. Paste the public key above
+5. Click "Add SSH key"
+
+## Test Connection:
+ssh -T git@github.com
+
+## Push Changes:
+git push origin main
+
+## SSH Files Location:
+- Private key: ~/.ssh/id_ed25519
+- Public key: ~/.ssh/id_ed25519.pub
+
+## Repository Remote:
+- Origin: git@github.com:dusty-schmidt/g-o-b.git
+- Developer: dustin.schmidt.86@proton.me

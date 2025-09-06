@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 22" width="60" height="22">
+  <defs>
+    <style>
+      .gob-text {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-weight: 700;
+        font-size: 18px;
+        fill: #6b7280;
+      }
+      .gob-subtitle {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-weight: 400;
+        font-size: 6px;
+        fill: #888;
+      }
+    </style>
+  </defs>
+  
+  <!-- Main GOB text -->
+  <text x="30" y="15" text-anchor="middle" class="gob-text">GOB</text>
+  
+  <!-- Optional subtitle -->
+  <!-- <text x="30" y="21" text-anchor="middle" class="gob-subtitle">ORCHESTRATOR</text> -->
+</svg>

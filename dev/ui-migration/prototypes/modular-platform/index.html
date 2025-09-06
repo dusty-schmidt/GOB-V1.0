@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #ffffff;
+            line-height: 1.5;
+            overflow: hidden;
+        }
+
+        .platform-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: #0a0a0a;
+        }
+
+        .content-area {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            margin-left: 140px; /* Space for left panel */
+            transition: margin-left 0.3s ease;
+        }
+
+        .chat-area.full-width {
+            margin-left: 0; /* Full width when panel collapsed */
+        }
+
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            margin-bottom: 8px;
+        }
+
+        .message-line {
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .message-prompt {
+            color: #666;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-prompt {
+            color: #888;
+        }
+
+        .message.assistant .message-prompt {
+            color: #666;
+        }
+
+        .message-content {
+            color: #ddd;
+            word-wrap: break-word;
+            flex: 1;
+        }
+
+        .input-area {
+            border-top: 1px solid #222;
+            padding: 12px 16px;
+            background: #0a0a0a;
+        }
+
+        .input-container {
+            display: flex;
+            align-items: center;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 6px 8px;
+        }
+
+        .input-container:focus-within {
+            border-color: #444;
+        }
+
+        .input-prompt {
+            color: #888;
+            margin-right: 6px;
+            font-size: 13px;
+        }
+
+        .message-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 13px;
+            outline: none;
+            resize: none;
+            min-height: 18px;
+            max-height: 100px;
+            line-height: 1.4;
+        }
+
+        .message-input::placeholder {
+            color: #555;
+        }
+
+        .send-button {
+            background: transparent;
+            border: none;
+            color: #555;
+            cursor: pointer;
+            padding: 2px;
+            margin-left: 6px;
+            font-size: 14px;
+            opacity: 0.6;
+        }
+
+        .send-button:hover:not(:disabled) {
+            color: #777;
+            opacity: 1;
+        }
+
+        /* Left floating panel */
+        .left-panel {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            background: transparent;
+            z-index: 100;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            width: 120px;
+        }
+
+        .left-panel.collapsed {
+            opacity: 0;
+            transform: translateX(-20px);
+            pointer-events: none;
+        }
+
+        .settings-line {
+            color: #555;
+            font-size: 12px;
+            cursor: pointer;
+            text-decoration: underline;
+            opacity: 0.7;
+            margin-bottom: 16px;
+        }
+
+        .settings-line:hover {
+            color: #777;
+            opacity: 1;
+        }
+
+        .model-info {
+            background: transparent;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .model-title {
+            font-size: 10px;
+            color: #444;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+        }
+
+        .model-name {
+            font-size: 16px;
+            color: #777;
+            margin-bottom: 2px;
+        }
+
+        .provider-name {
+            font-size: 14px;
+            color: #555;
+        }
+
+        /* Right status panel */
+        .status-panel {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: transparent;
+            text-align: right;
+            z-index: 100;
+        }
+
+        .status-indicator {
+            font-size: 20px;
+            color: #00ff00;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .datetime {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .location {
+            font-size: 11px;
+            color: #555;
+            margin-bottom: 4px;
+        }
+
+        .weather {
+            font-size: 11px;
+            color: #555;
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="platform-container">
+        <div class="content-area">
+            <div class="chat-area" id="chatArea">
+                <div class="messages-area" id="messagesArea">
+                    <!-- Completely blank - no initial message -->
+                </div>
+                
+                <div class="input-area">
+                    <div class="input-container">
+                        <span class="input-prompt">$</span>
+                        <textarea 
+                            class="message-input" 
+                            placeholder="..." 
+                            id="messageInput"
+                            rows="1"
+                        ></textarea>
+                        <button class="send-button" id="sendButton" disabled>
+                            ⏎
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Left panel with settings first, then model info -->
+            <div class="left-panel" id="leftPanel">
+                <div class="settings-line" onclick="openSettings()">settings</div>
+                <div class="model-info" onclick="toggleLeftPanel()">
+                    <div class="model-title">Model</div>
+                    <div class="model-name">GPT-4</div>
+                    <div class="provider-name">OpenAI</div>
+                </div>
+            </div>
+
+            <!-- Right status panel -->
+            <div class="status-panel">
+                <div class="status-indicator">💡</div>
+                <div class="datetime" id="datetime">--/--/-- --:--</div>
+                <div class="location">Columbus, OH</div>
+                <div class="weather">sunny, 65°</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class ChatPlatform {
+            constructor() {
+                this.messageInput = document.getElementById('messageInput');
+                this.sendButton = document.getElementById('sendButton');
+                this.messagesArea = document.getElementById('messagesArea');
+                
+                this.setupEventListeners();
+                this.updateDateTime();
+                setInterval(() => this.updateDateTime(), 1000);
+            }
+
+            setupEventListeners() {
+                this.messageInput.addEventListener('input', () => {
+                    this.autoResize();
+                    this.toggleSendButton();
+                });
+
+                this.messageInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                });
+
+                this.sendButton.addEventListener('click', () => {
+                    this.sendMessage();
+                });
+            }
+
+            updateDateTime() {
+                const now = new Date();
+                const date = now.toLocaleDateString('en-US', { 
+                    month: '2-digit', 
+                    day: '2-digit', 
+                    year: '2-digit' 
+                });
+                const time = now.toLocaleTimeString('en-US', { 
+                    hour12: false, 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                document.getElementById('datetime').textContent = `${date} ${time}`;
+            }
+
+            autoResize() {
+                this.messageInput.style.height = 'auto';
+                this.messageInput.style.height = Math.min(this.messageInput.scrollHeight, 100) + 'px';
+            }
+
+            toggleSendButton() {
+                const hasContent = this.messageInput.value.trim().length > 0;
+                this.sendButton.disabled = !hasContent;
+                this.sendButton.style.opacity = hasContent ? '1' : '0.6';
+            }
+
+            sendMessage() {
+                const content = this.messageInput.value.trim();
+                if (!content) return;
+
+                this.addMessage(content, 'user');
+                this.messageInput.value = '';
+                this.autoResize();
+                this.toggleSendButton();
+
+                setTimeout(() => {
+                    this.simulateResponse();
+                }, 500);
+            }
+
+            addMessage(content, sender) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}`;
+                
+                const lineDiv = document.createElement('div');
+                lineDiv.className = 'message-line';
+                
+                const promptSpan = document.createElement('span');
+                promptSpan.className = 'message-prompt';
+                promptSpan.textContent = sender === 'user' ? '$' : '>';
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                contentDiv.textContent = content;
+                
+                lineDiv.appendChild(promptSpan);
+                lineDiv.appendChild(contentDiv);
+                messageDiv.appendChild(lineDiv);
+                this.messagesArea.appendChild(messageDiv);
+                
+                this.messagesArea.scrollTop = this.messagesArea.scrollHeight;
+            }
+
+            simulateResponse() {
+                const responses = [
+                    "Acknowledged.",
+                    "Processing...",
+                    "Understood.",
+                    "Ready.",
+                    "Complete."
+                ];
+                
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                this.addMessage(randomResponse, 'assistant');
+            }
+        }
+
+        function toggleLeftPanel() {
+            const leftPanel = document.getElementById('leftPanel');
+            const chatArea = document.getElementById('chatArea');
+            
+            leftPanel.classList.toggle('collapsed');
+            chatArea.classList.toggle('full-width');
+        }
+
+        function openSettings() {
+            alert('Settings panel would open here (demo)');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new ChatPlatform();
+        });
+    </script>
+</body>
+</html>
