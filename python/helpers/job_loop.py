@@ -15,15 +15,24 @@ pause_time = 0
 
 async def run_loop():
     global pause_time, keep_running
+    rfc_connection_failed = False  # Track RFC connection failures to avoid spam
 
     while True:
         if runtime.is_development():
             # Signal to container that the job loop should be paused
-            # if we are runing a development instance to avoid duble-running the jobs
+            # if we are runing a development instance to avoid double-running the jobs
             try:
                 await runtime.call_development_function(pause_loop)
+                rfc_connection_failed = False  # Reset on success
             except Exception as e:
-                PrintStyle().error("Failed to pause job loop by development instance: " + errors.error_text(e))
+                # Only log RFC connection errors once to avoid spam
+                if not rfc_connection_failed:
+                    error_msg = errors.error_text(e)
+                    if "Connect call failed" in error_msg or "No RFC password" in error_msg:
+                        PrintStyle().print("RFC connection not available - running in standalone development mode")
+                        rfc_connection_failed = True
+                    else:
+                        PrintStyle().error("Failed to pause job loop by development instance: " + error_msg)
         if not keep_running and (time.time() - pause_time) > (SLEEP_TIME * 2):
             resume_loop()
         if keep_running:
