@@ -23,6 +23,7 @@ Welcome to GOBV1 (General Orchestrator Bot V1.0) documentation.
 ### Architecture & System
 | Document | Description |
 |----------|-------------|
+| [PERSONALITY_SYSTEM.md](PERSONALITY_SYSTEM.md) | **GOB's competent network admin personality** |
 | [AGENT_NAMING_SYSTEM.md](AGENT_NAMING_SYSTEM.md) | Dynamic agent identity system |
 | [STARTUP_ANALYSIS.md](STARTUP_ANALYSIS.md) | System startup process |
 

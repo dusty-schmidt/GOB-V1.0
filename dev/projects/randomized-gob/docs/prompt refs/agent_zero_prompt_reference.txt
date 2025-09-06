@@ -1,0 +1,54 @@
+AGENT ZERO PROMPT HIERARCHY - QUICK REFERENCE
+==============================================
+
+PRECEDENCE ORDER (highest to lowest):
+1. Dynamic Behavior Rules      [position 0, highest priority]
+2. Core System Prompt         [role, environment, communication, solving, tips] 
+3. Tools & Capabilities       [built-in + MCP tools]
+4. Secrets & Variables        [configuration values]
+5. Dynamic Memory Recalls     [memories + solutions from vector DB]
+6. Extension Content          [plugin additions]
+7. Context Extras            [temporary additions]
+
+FILE STRUCTURE:
+prompts/
+├── default/                  ← fallback prompts
+├── custom-profile/           ← overrides default (if configured)
+└── agent-specific/           ← individual agent overrides
+
+KEY FILES:
+- agent.system.main.md           ← central hub, includes other files
+- agent.system.main.role.md      ← agent personality/role
+- agent.system.main.communication.md ← response format rules
+- agent.system.main.solving.md  ← problem-solving approach
+- agent.system.tools.md          ← tools registry
+- agent.system.tool.*.md         ← individual tool prompts
+- behaviour.md (in agent memory) ← dynamic behavior rules
+
+EXTENSION EXECUTION ORDER:
+_10_ → _20_ → _50_ → _60_ → _70_ → _90_ (alphabetical with number prefixes)
+
+KEY EXTENSION POINTS:
+- system_prompt/                 ← core prompt assembly
+- message_loop_prompts_before/   ← pre-assembly hooks
+- message_loop_prompts_after/    ← post-assembly hooks (memory recall here)
+
+MEMORY SYSTEM:
+- Triggered every N iterations (configurable)
+- Uses utility LLM to generate search queries  
+- Searches vector DB with similarity threshold
+- Optional AI post-filtering for relevance
+- Injects memories + solutions into system prompt
+
+DYNAMIC BEHAVIOR:
+- Stored as behaviour.md in agent memory directory
+- Injected at position 0 (overrides everything else)
+- Modified in real-time via behaviour_adjustment tool
+- Persists across sessions
+
+CONFIGURATION SOURCES:
+- Agent profile settings
+- Settings file (intervals, thresholds, etc.)
+- MCP server configs
+- Secrets manager
+- Environment variables

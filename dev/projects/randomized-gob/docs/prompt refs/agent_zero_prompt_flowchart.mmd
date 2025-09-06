@@ -1,0 +1,75 @@
+flowchart TD
+    A[User Message Received] --> B[Initialize Loop Data]
+    B --> C[Call message_loop_prompts_before Extensions]
+    
+    C --> D[Core System Prompt Assembly]
+    D --> D1[Load agent.system.main.md]
+    D1 --> D2[Include role, environment, communication, solving, tips]
+    D2 --> D3[Load Tools Prompts]
+    D3 --> D4{MCP Tools Configured?}
+    D4 -->|Yes| D5[Add MCP Tools]
+    D4 -->|No| D6[Skip MCP Tools]
+    D5 --> D7[Add Secrets & Variables]
+    D6 --> D7
+    
+    D7 --> E[Dynamic Behavior Injection]
+    E --> E1{Behavior Rules Exist?}
+    E1 -->|Yes| E2[Load behaviour.md from agent memory]
+    E1 -->|No| E3[Load default behavior]
+    E2 --> E4[Insert at position 0 - HIGHEST PRIORITY]
+    E3 --> E4
+    
+    E4 --> F[Call message_loop_prompts_after Extensions]
+    F --> F1[Memory Recall Extension]
+    F1 --> F2{Memory Recall Enabled & Interval Met?}
+    F2 -->|Yes| F3[Generate Memory Query via Utility LLM]
+    F2 -->|No| F7[Skip Memory Recall]
+    F3 --> F4[Search Vector DB for Memories & Solutions]
+    F4 --> F5{Post-filtering Enabled?}
+    F5 -->|Yes| F6[AI Filter Relevant Memories]
+    F5 -->|No| F8[Use Raw Results]
+    F6 --> F8
+    F8 --> F9[Add to system_prompt extras]
+    F7 --> F10[Continue to DateTime Extension]
+    F9 --> F10
+    
+    F10 --> F11[Add Current DateTime]
+    F11 --> F12[Add Agent Info]
+    F12 --> F13[Add Other Extensions...]
+    
+    F13 --> G[Final Assembly]
+    G --> G1[Concatenate System Prompt Parts]
+    G1 --> G2[Prepare History + Extras]
+    G2 --> G3[Convert to LangChain Format]
+    G3 --> G4[Build Full Prompt Array]
+    
+    G4 --> H[Send to LLM]
+    
+    %% Styling
+    classDef priority fill:#ff9999
+    classDef core fill:#99ccff
+    classDef dynamic fill:#99ff99
+    classDef extensions fill:#ffcc99
+    
+    class E4 priority
+    class D1,D2,D3 core
+    class E2,F3,F4 dynamic
+    class F10,F11,F12 extensions
+
+    %% File Structure Subgraph
+    subgraph Files["File Structure Priority"]
+        direction TB
+        P1[Custom Agent Profile] --> P2[Default Prompts]
+        P2 --> P3[Template Processing]
+        P3 --> P4[Fallback Logic]
+    end
+    
+    %% Memory System Subgraph  
+    subgraph Memory["Memory System Detail"]
+        direction TB
+        M1[User Instruction + History] --> M2[Utility LLM Query Generation]
+        M2 --> M3[Vector DB Search]
+        M3 --> M4[Similarity Threshold Filter]
+        M4 --> M5[AI Relevance Filter]
+        M5 --> M6[Inject into System Prompt]
+    end
