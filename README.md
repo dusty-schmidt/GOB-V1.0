@@ -67,7 +67,7 @@ The setup script will automatically install:
 conda --version
 
 # Manual environment activation
-conda activate gobv1
+conda activate gob
 ```
 
 ### Runtime Issues
@@ -97,7 +97,7 @@ scripts/gob restart
 
 ```bash
 # Activate environment
-conda activate gobv1
+conda activate gob
 
 # Make changes to code
 # ...

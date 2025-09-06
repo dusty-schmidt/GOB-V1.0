@@ -18,7 +18,7 @@ GOB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GOB_HOST="0.0.0.0"
 GOB_PORT="50080"
 GOB_URL="http://localhost:${GOB_PORT}"
-CONDA_ENV="gobv1"
+CONDA_ENV="gob"
 LOG_FILE="${GOB_DIR}/gob_output.log"
 PID_FILE="${GOB_DIR}/.gob.pid"
 

@@ -16,7 +16,7 @@ NC='\033[0m' # No Color
 
 # Default Configuration (can be overridden by device config)
 PROJECT_NAME="GOBV1"
-DEFAULT_CONDA_ENV="gobv1"
+DEFAULT_CONDA_ENV="gob"
 DEFAULT_PYTHON_VERSION="3.12"
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MINICONDA_VERSION="latest"
@@ -171,7 +171,7 @@ create_device_config() {
     "memory_gb": "$MEMORY_GB",
     "disk_available": "$DISK_SPACE"
   },
-  "gobv1_config": {
+  "gob_config": {
     "project_name": "$PROJECT_NAME",
     "conda_environment": "$CONDA_ENV",
     "python_version": "$PYTHON_VERSION",
@@ -609,11 +609,11 @@ setup_cli() {
 create_activation_script() {
     print_status "step" "Creating environment activation script..."
     
-    cat > activate_gobv1.sh << EOF
+    cat > activate_gob.sh << EOF
 #!/bin/bash
-# File: activate_gobv1.sh  
+# File: activate_gob.sh  
 # Location: Project root directory
-# Role: Convenience script to activate GOBV1 conda environment
+# Role: Convenience script to activate GOB conda environment
 
 # Source conda
 if [ -f "\$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
@@ -625,18 +625,18 @@ fi
 # Activate environment
 conda activate $CONDA_ENV
 
-echo "GOBV1 environment activated!"
+echo "GOB environment activated!"
 echo "Project directory: $PROJECT_DIR"
 echo "Python version: \$(python --version)"
 echo ""
 echo "Available commands:"
-echo "  scripts/gob start   - Start GOBV1"
+echo "  scripts/gob start   - Start GOB"
 echo "  scripts/gob status  - Check status" 
 echo "  scripts/gob logs    - View logs"
 EOF
 
-    chmod +x activate_gobv1.sh
-    print_status "success" "Activation script created: ./activate_gobv1.sh"
+    chmod +x activate_gob.sh
+    print_status "success" "Activation script created: ./activate_gob.sh"
 }
 
 run_verification() {
@@ -698,8 +698,8 @@ print_completion() {
     echo -e "  ✅ Project Directory: $PROJECT_DIR"
     echo
     echo -e "${CYAN}Quick Start:${NC}"
-    echo -e "${GREEN}1.${NC} Activate environment: ${YELLOW}source ./activate_gobv1.sh${NC}"
-    echo -e "${GREEN}2.${NC} Start GOBV1: ${YELLOW}scripts/gob start${NC}"
+    echo -e "${GREEN}1.${NC} Activate environment: ${YELLOW}source ./activate_gob.sh${NC}"
+    echo -e "${GREEN}2.${NC} Start GOB: ${YELLOW}scripts/gob start${NC}"
     echo -e "${GREEN}3.${NC} Check status: ${YELLOW}scripts/gob status${NC}"  
     echo -e "${GREEN}4.${NC} Open in browser: ${YELLOW}http://localhost:50080${NC}"
     echo -e "${GREEN}5.${NC} View logs: ${YELLOW}scripts/gob logs${NC}"
@@ -745,7 +745,7 @@ check_if_setup_complete() {
             echo -e "  Conda: ${GREEN}$(conda --version)${NC}"
             echo
             echo -e "${CYAN}To get started:${NC}"
-            echo -e "  ${GREEN}source ./activate_gobv1.sh${NC}"
+            echo -e "  ${GREEN}source ./activate_gob.sh${NC}"
             echo -e "  ${GREEN}scripts/gob start${NC}"
             echo
             echo -e "${YELLOW}To force a fresh setup, delete: $DEVICE_CONFIG_FILE${NC}"

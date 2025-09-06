@@ -113,7 +113,7 @@ conda env list                # List environments
 ./setup.sh                    # Recreate environment
 
 # Dependencies broken
-conda activate gobv1
+conda activate gob
 pip install -r requirements.txt --force-reinstall
 ```
 

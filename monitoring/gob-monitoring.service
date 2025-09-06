@@ -1,0 +1,46 @@
+[Unit]
+Description=GOB Monitoring Dashboard - Real-time monitoring and control for GOB multi-agent system
+Documentation=file:///home/ds/GOB/monitoring/README.md
+After=network.target graphical.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ds
+Group=ds
+WorkingDirectory=/home/ds/GOB/monitoring
+Environment=PATH=/home/ds/miniconda3/envs/gob/bin:/home/ds/miniconda3/bin:/usr/local/bin:/usr/bin:/bin
+Environment=PYTHONPATH=/home/ds/GOB/monitoring
+Environment=GOB_DIRECTORY=/home/ds/GOB
+Environment=DISPLAY=:0
+
+# Use conda environment
+ExecStart=/home/ds/miniconda3/envs/gob/bin/python server.py --port 8050 --gob-dir /home/ds/GOB
+
+# Auto-open browser window after startup
+ExecStartPost=/bin/bash -c 'sleep 10 && /home/ds/GOB/monitoring/open_monitor.sh'
+
+# Restart settings
+Restart=always
+RestartSec=5
+StartLimitInterval=300
+StartLimitBurst=5
+
+# Resource limits
+MemoryMax=512M
+CPUQuota=50%
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gob-monitoring
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=false
+ProtectSystem=strict
+ReadWritePaths=/home/ds/GOB/monitoring/logs /home/ds/GOB/monitoring/data
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,33 @@
+{
+  "device": {
+    "nickname": "the-tank",
+    "hostname": "the-tank",
+    "setup_timestamp": "2025-09-06T20:00:42Z",
+    "config_version": "1.0"
+  },
+  "user": {
+    "full_name": "ds",
+    "date_of_birth": "1986-11-17",
+    "username": "ds"
+  },
+  "system": {
+    "os_name": "Linux",
+    "os_version": "6.12.41+deb13-amd64", 
+    "architecture": "x86_64",
+    "cpu_info": "Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz",
+    "memory_gb": "11",
+    "disk_available": "813G"
+  },
+  "gob_config": {
+    "project_name": "GOB",
+    "conda_environment": "gob",
+    "python_version": "3.12",
+    "project_directory": "/home/ds/GOB"
+  },
+  "installation": {
+    "conda_command": "mamba",
+    "miniconda_path": "",
+    "setup_completed": false,
+    "last_updated": "2025-09-06T20:00:42Z"
+  }
+}

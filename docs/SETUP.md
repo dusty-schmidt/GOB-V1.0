@@ -63,10 +63,10 @@ cd GOB-V1.0
 ### Step 3: Create Environment
 ```bash
 # Create conda environment
-mamba create -n gobv1 python=3.13 -y
+mamba create -n gob python=3.13 -y
 
 # Activate environment
-mamba activate gobv1
+mamba activate gob
 
 # Install core packages (faster via conda)
 mamba install -c conda-forge \
@@ -180,7 +180,7 @@ conda --version
 conda env list
 
 # Recreate environment
-conda env remove -n gobv1
+conda env remove -n gob
 ./setup.sh
 ```
 
@@ -192,7 +192,7 @@ conda env remove -n gobv1
 ss -tulpn | grep 50080
 
 # Check environment is activated
-conda activate gobv1
+conda activate gob
 
 # Check detailed logs
 scripts/gob logs 50
@@ -215,7 +215,7 @@ curl -I http://localhost:50080
 **Dependencies issues:**
 ```bash
 # Reinstall dependencies
-conda activate gobv1
+conda activate gob
 pip install -r requirements.txt --force-reinstall
 
 # Or recreate environment
@@ -254,7 +254,7 @@ scripts/gob url  # Opens browser
 ### Environment Management
 ```bash
 # Manual activation (if needed)
-conda activate gobv1
+conda activate gob
 
 # Update dependencies
 pip install -r requirements.txt
@@ -277,7 +277,7 @@ export CONDA_ENV_PATH=/path/to/your/envs
 ### Development Mode
 ```bash
 # Run directly with Python
-conda activate gobv1
+conda activate gob
 python run_ui.py --host 0.0.0.0 --port 50080 --debug
 
 # Or use environment variables
@@ -306,7 +306,7 @@ After setup, verify everything works:
 scripts/gob help
 
 # 2. Check environment
-conda activate gobv1
+conda activate gob
 python -c "import flask, numpy, pandas"
 
 # 3. Start GOBV1
