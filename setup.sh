@@ -17,7 +17,7 @@ NC='\033[0m' # No Color
 # Default Configuration (can be overridden by device config)
 PROJECT_NAME="GOBV1"
 DEFAULT_CONDA_ENV="gobv1"
-DEFAULT_PYTHON_VERSION="3.13"
+DEFAULT_PYTHON_VERSION="3.12"
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MINICONDA_VERSION="latest"
 DEVICE_CONFIG_FILE="$PROJECT_DIR/device_config.json"
@@ -104,28 +104,43 @@ create_device_config() {
         fi
     fi
     
+    # Collect system info first for smart defaults
+    collect_device_info
+    
     echo -e "${CYAN}Device Configuration Setup${NC}"
-    echo "Please provide the following information:"
+    echo "Provide basic info (press Enter to use defaults):"
     echo
     
-    # Collect user information
-    read -p "Device Nickname (e.g., 'John-Laptop', 'DevServer01'): " DEVICE_NICKNAME
-    while [ -z "$DEVICE_NICKNAME" ]; do
-        echo -e "${RED}Device nickname is required${NC}"
-        read -p "Device Nickname: " DEVICE_NICKNAME
-    done
+    # Generate smart defaults
+    DEFAULT_NICKNAME="${CURRENT_USER}-$(hostname | cut -d'.' -f1)"
+    DEFAULT_FULL_NAME="$CURRENT_USER"
     
-    read -p "Your Full Name: " USER_FULL_NAME
-    while [ -z "$USER_FULL_NAME" ]; do
-        echo -e "${RED}Full name is required${NC}"
-        read -p "Your Full Name: " USER_FULL_NAME
-    done
+    # Device nickname with smart default
+    read -p "Device Nickname [$DEFAULT_NICKNAME]: " DEVICE_NICKNAME
+    DEVICE_NICKNAME="${DEVICE_NICKNAME:-$DEFAULT_NICKNAME}"
     
-    read -p "Date of Birth (YYYY-MM-DD): " USER_DOB
-    while [[ ! $USER_DOB =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; do
-        echo -e "${RED}Please enter date in YYYY-MM-DD format${NC}"
-        read -p "Date of Birth (YYYY-MM-DD): " USER_DOB
-    done
+    # Full name with default
+    read -p "Your Full Name [$DEFAULT_FULL_NAME]: " USER_FULL_NAME
+    USER_FULL_NAME="${USER_FULL_NAME:-$DEFAULT_FULL_NAME}"
+    
+    # Date of birth with flexible format
+    read -p "Date of Birth (MMDDYYYY or YYYY-MM-DD) [01011990]: " USER_DOB_INPUT
+    USER_DOB_INPUT="${USER_DOB_INPUT:-01011990}"
+    
+    # Convert date format
+    if [[ $USER_DOB_INPUT =~ ^[0-9]{8}$ ]]; then
+        # MMDDYYYY format
+        month="${USER_DOB_INPUT:0:2}"
+        day="${USER_DOB_INPUT:2:2}"
+        year="${USER_DOB_INPUT:4:4}"
+        USER_DOB="$year-$month-$day"
+    elif [[ $USER_DOB_INPUT =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+        # Already in YYYY-MM-DD format
+        USER_DOB="$USER_DOB_INPUT"
+    else
+        echo -e "${YELLOW}Invalid date format, using default: 1990-01-01${NC}"
+        USER_DOB="1990-01-01"
+    fi
     
     # Environment customization
     read -p "Conda Environment Name [$DEFAULT_CONDA_ENV]: " CUSTOM_CONDA_ENV
@@ -133,9 +148,6 @@ create_device_config() {
     
     read -p "Python Version [$DEFAULT_PYTHON_VERSION]: " CUSTOM_PYTHON_VERSION
     PYTHON_VERSION="${CUSTOM_PYTHON_VERSION:-$DEFAULT_PYTHON_VERSION}"
-    
-    # Collect system info
-    collect_device_info
     
     # Create device config JSON
     cat > "$DEVICE_CONFIG_FILE" << EOF
@@ -231,6 +243,8 @@ update_device_config() {
         rm -f "${DEVICE_CONFIG_FILE}.bak"
     fi
 }
+
+detect_system() {
     print_status "step" "Detecting system architecture..."
     
     case "$(uname -s)" in
@@ -332,13 +346,22 @@ install_miniconda() {
 configure_conda_channels() {
     print_status "step" "Configuring conda channels with forge priority..."
     
-    # Set conda-forge as highest priority channel
-    conda config --add channels conda-forge
-    conda config --set channel_priority flexible
+    # Check if channels are already configured properly
+    local current_channels=$(conda config --show channels 2>/dev/null || echo "")
     
-    # Add additional useful channels
-    conda config --add channels bioconda  # For scientific packages
-    conda config --add channels pytorch   # For ML packages if needed
+    # Set conda-forge as highest priority channel (skip if already first)
+    if ! echo "$current_channels" | grep -A1 "channels:" | grep -q "conda-forge" || ! echo "$current_channels" | grep -A1 "channels:" | head -2 | tail -1 | grep -q "conda-forge"; then
+        conda config --add channels conda-forge 2>/dev/null || true
+    fi
+    conda config --set channel_priority flexible 2>/dev/null || true
+    
+    # Add additional useful channels (skip if already present)
+    if ! echo "$current_channels" | grep -q "bioconda"; then
+        conda config --add channels bioconda 2>/dev/null || true  # For scientific packages
+    fi
+    if ! echo "$current_channels" | grep -q "pytorch"; then
+        conda config --add channels pytorch 2>/dev/null || true   # For ML packages if needed
+    fi
     
     # Show channel configuration
     print_status "info" "Channel configuration:"
@@ -379,9 +402,11 @@ check_prerequisites() {
         CONDA_CMD="mamba"
         print_status "success" "Mamba available: $(mamba --version | head -1)"
         
-        # Configure mamba to use same channels
-        mamba config --add channels conda-forge
-        mamba config --set channel_priority flexible
+        # Configure mamba to use same channels (skip if already configured)
+        if ! mamba config --show channels 2>/dev/null | grep -q "conda-forge"; then
+            mamba config --add channels conda-forge 2>/dev/null || true
+        fi
+        mamba config --set channel_priority flexible 2>/dev/null || true
         
         # Update config
         update_device_config "conda_command" "mamba"
@@ -613,9 +638,60 @@ print_completion() {
     echo
 }
 
+# Check if setup is already complete
+check_if_setup_complete() {
+    if [ -f "$DEVICE_CONFIG_FILE" ]; then
+        local setup_complete=$(grep '"setup_completed"' "$DEVICE_CONFIG_FILE" | grep -q 'true' && echo "true" || echo "false")
+        local env_exists=false
+        local conda_available=false
+        
+        # Load existing config
+        load_device_config
+        
+        # Check if conda is available
+        if command -v conda >/dev/null 2>&1 || command -v mamba >/dev/null 2>&1; then
+            conda_available=true
+            if [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
+                source "$HOME/miniconda3/etc/profile.d/conda.sh"
+            fi
+        fi
+        
+        # Check if environment exists
+        if $conda_available && conda env list | grep -q "^$CONDA_ENV "; then
+            env_exists=true
+        fi
+        
+        if [ "$setup_complete" = "true" ] && [ "$conda_available" = "true" ] && [ "$env_exists" = "true" ]; then
+            echo
+            print_status "success" "Setup already completed for this device!"
+            echo
+            echo -e "${CYAN}Current Configuration:${NC}"
+            echo -e "  Device: ${GREEN}$DEVICE_NICKNAME${NC}"
+            echo -e "  User: ${GREEN}$USER_FULL_NAME${NC}"
+            echo -e "  Environment: ${GREEN}$CONDA_ENV${NC}"
+            echo -e "  Conda: ${GREEN}$(conda --version)${NC}"
+            echo
+            echo -e "${CYAN}To get started:${NC}"
+            echo -e "  ${GREEN}source ./activate_gobv1.sh${NC}"
+            echo -e "  ${GREEN}scripts/gob start${NC}"
+            echo
+            echo -e "${YELLOW}To force a fresh setup, delete: $DEVICE_CONFIG_FILE${NC}"
+            echo
+            return 0
+        fi
+    fi
+    return 1
+}
+
 # Main execution
 main() {
     print_header
+    
+    # Check if setup is already complete and exit early if so
+    if check_if_setup_complete; then
+        exit 0
+    fi
+    
     check_prerequisites
     setup_environment  
     install_dependencies
