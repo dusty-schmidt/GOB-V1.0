@@ -6,10 +6,10 @@ Quick reference timeline for GOBV1 development sessions. Each entry links to det
 
 ### **2025-09-06**
 
-**Morning - Project Reorganization & Branding** → [Details](2025-09-06-project-reorganization.md)  
+**09:00-13:00 - Project Reorganization & Branding** → [Details](2025-09-06-project-reorganization.md)  
 Transformed Agent Zero fork into independent GOB project with CLI tool, visual rebrand, and professional structure.
 
-**Afternoon - Setup System Overhaul** → [Details](2025-09-06-major-cleanup-and-setup-overhaul.md)  
+**14:00-17:00 - Setup System Overhaul** → [Details](2025-09-06-major-cleanup-and-setup-overhaul.md)  
 Fixed broken user experience, removed Docker complexity, created automatic setup script. Setup success: 0% → ~100%.
 
 ---
