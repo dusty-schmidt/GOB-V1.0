@@ -14,12 +14,13 @@ CYAN='\033[0;36m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Configuration
+# Default Configuration (can be overridden by device config)
 PROJECT_NAME="GOBV1"
-CONDA_ENV="gobv1"
-PYTHON_VERSION="3.13"
+DEFAULT_CONDA_ENV="gobv1"
+DEFAULT_PYTHON_VERSION="3.13"
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MINICONDA_VERSION="latest"
+DEVICE_CONFIG_FILE="$PROJECT_DIR/device_config.json"
 
 print_header() {
     echo -e "${CYAN}=== $PROJECT_NAME Enhanced Setup ===${NC}"
@@ -40,7 +41,196 @@ print_status() {
     esac
 }
 
-detect_system() {
+collect_device_info() {
+    print_status "step" "Collecting device information..."
+    
+    # Get system info
+    HOSTNAME=$(hostname)
+    OS_NAME=$(uname -s)
+    OS_VERSION=$(uname -r)
+    ARCHITECTURE=$(uname -m)
+    
+    # Get additional system details
+    if command -v lscpu >/dev/null 2>&1; then
+        CPU_INFO=$(lscpu | grep "Model name" | sed 's/Model name:[[:space:]]*//' || echo "Unknown")
+    elif [[ "$OS_NAME" == "Darwin" ]]; then
+        CPU_INFO=$(sysctl -n machdep.cpu.brand_string 2>/dev/null || echo "Unknown")
+    else
+        CPU_INFO="Unknown"
+    fi
+    
+    # Get memory info
+    if command -v free >/dev/null 2>&1; then
+        MEMORY_GB=$(free -g | awk '/^Mem:/{print $2}')
+    elif [[ "$OS_NAME" == "Darwin" ]]; then
+        MEMORY_BYTES=$(sysctl -n hw.memsize 2>/dev/null || echo "0")
+        MEMORY_GB=$((MEMORY_BYTES / 1024 / 1024 / 1024))
+    else
+        MEMORY_GB="Unknown"
+    fi
+    
+    # Get disk space
+    DISK_SPACE=$(df -h "$PROJECT_DIR" | awk 'NR==2{print $4}' || echo "Unknown")
+    
+    # Get current user
+    CURRENT_USER=$(whoami)
+    
+    # Get current date/time
+    SETUP_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    
+    echo "System Information Detected:"
+    echo "  Hostname: $HOSTNAME"
+    echo "  OS: $OS_NAME $OS_VERSION"
+    echo "  Architecture: $ARCHITECTURE"
+    echo "  CPU: $CPU_INFO"
+    echo "  Memory: ${MEMORY_GB}GB"
+    echo "  Available Disk: $DISK_SPACE"
+    echo "  User: $CURRENT_USER"
+    echo
+}
+
+create_device_config() {
+    print_status "step" "Creating device configuration..."
+    
+    # Check if config already exists
+    if [ -f "$DEVICE_CONFIG_FILE" ]; then
+        print_status "warning" "Device configuration already exists: $DEVICE_CONFIG_FILE"
+        read -p "Do you want to recreate it? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            print_status "info" "Using existing device configuration"
+            load_device_config
+            return 0
+        fi
+    fi
+    
+    echo -e "${CYAN}Device Configuration Setup${NC}"
+    echo "Please provide the following information:"
+    echo
+    
+    # Collect user information
+    read -p "Device Nickname (e.g., 'John-Laptop', 'DevServer01'): " DEVICE_NICKNAME
+    while [ -z "$DEVICE_NICKNAME" ]; do
+        echo -e "${RED}Device nickname is required${NC}"
+        read -p "Device Nickname: " DEVICE_NICKNAME
+    done
+    
+    read -p "Your Full Name: " USER_FULL_NAME
+    while [ -z "$USER_FULL_NAME" ]; do
+        echo -e "${RED}Full name is required${NC}"
+        read -p "Your Full Name: " USER_FULL_NAME
+    done
+    
+    read -p "Date of Birth (YYYY-MM-DD): " USER_DOB
+    while [[ ! $USER_DOB =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; do
+        echo -e "${RED}Please enter date in YYYY-MM-DD format${NC}"
+        read -p "Date of Birth (YYYY-MM-DD): " USER_DOB
+    done
+    
+    # Environment customization
+    read -p "Conda Environment Name [$DEFAULT_CONDA_ENV]: " CUSTOM_CONDA_ENV
+    CONDA_ENV="${CUSTOM_CONDA_ENV:-$DEFAULT_CONDA_ENV}"
+    
+    read -p "Python Version [$DEFAULT_PYTHON_VERSION]: " CUSTOM_PYTHON_VERSION
+    PYTHON_VERSION="${CUSTOM_PYTHON_VERSION:-$DEFAULT_PYTHON_VERSION}"
+    
+    # Collect system info
+    collect_device_info
+    
+    # Create device config JSON
+    cat > "$DEVICE_CONFIG_FILE" << EOF
+{
+  "device": {
+    "nickname": "$DEVICE_NICKNAME",
+    "hostname": "$HOSTNAME",
+    "setup_timestamp": "$SETUP_TIMESTAMP",
+    "config_version": "1.0"
+  },
+  "user": {
+    "full_name": "$USER_FULL_NAME",
+    "date_of_birth": "$USER_DOB",
+    "username": "$CURRENT_USER"
+  },
+  "system": {
+    "os_name": "$OS_NAME",
+    "os_version": "$OS_VERSION", 
+    "architecture": "$ARCHITECTURE",
+    "cpu_info": "$CPU_INFO",
+    "memory_gb": "$MEMORY_GB",
+    "disk_available": "$DISK_SPACE"
+  },
+  "gobv1_config": {
+    "project_name": "$PROJECT_NAME",
+    "conda_environment": "$CONDA_ENV",
+    "python_version": "$PYTHON_VERSION",
+    "project_directory": "$PROJECT_DIR"
+  },
+  "installation": {
+    "conda_command": "",
+    "miniconda_path": "",
+    "setup_completed": false,
+    "last_updated": "$SETUP_TIMESTAMP"
+  }
+}
+EOF
+
+    print_status "success" "Device configuration created: $DEVICE_CONFIG_FILE"
+    
+    # Display configuration summary
+    echo
+    echo -e "${CYAN}Configuration Summary:${NC}"
+    echo -e "  Device: ${GREEN}$DEVICE_NICKNAME${NC} ($HOSTNAME)"
+    echo -e "  User: ${GREEN}$USER_FULL_NAME${NC} (born $USER_DOB)"
+    echo -e "  Environment: ${GREEN}$CONDA_ENV${NC} (Python $PYTHON_VERSION)"
+    echo -e "  System: ${GREEN}$OS_NAME $ARCHITECTURE${NC}"
+    echo
+}
+
+load_device_config() {
+    print_status "info" "Loading device configuration..."
+    
+    if [ ! -f "$DEVICE_CONFIG_FILE" ]; then
+        print_status "warning" "No device configuration found, using defaults"
+        CONDA_ENV="$DEFAULT_CONDA_ENV"
+        PYTHON_VERSION="$DEFAULT_PYTHON_VERSION"
+        return 0
+    fi
+    
+    # Extract values from JSON (simple parsing for bash)
+    DEVICE_NICKNAME=$(grep '"nickname"' "$DEVICE_CONFIG_FILE" | sed 's/.*"nickname":[[:space:]]*"\([^"]*\)".*/\1/')
+    USER_FULL_NAME=$(grep '"full_name"' "$DEVICE_CONFIG_FILE" | sed 's/.*"full_name":[[:space:]]*"\([^"]*\)".*/\1/')
+    CONDA_ENV=$(grep '"conda_environment"' "$DEVICE_CONFIG_FILE" | sed 's/.*"conda_environment":[[:space:]]*"\([^"]*\)".*/\1/')
+    PYTHON_VERSION=$(grep '"python_version"' "$DEVICE_CONFIG_FILE" | sed 's/.*"python_version":[[:space:]]*"\([^"]*\)".*/\1/')
+    
+    # Use defaults if extraction failed
+    CONDA_ENV="${CONDA_ENV:-$DEFAULT_CONDA_ENV}"
+    PYTHON_VERSION="${PYTHON_VERSION:-$DEFAULT_PYTHON_VERSION}"
+    
+    print_status "success" "Configuration loaded for device: $DEVICE_NICKNAME"
+}
+
+update_device_config() {
+    local key="$1"
+    local value="$2"
+    
+    if [ -f "$DEVICE_CONFIG_FILE" ]; then
+        # Simple JSON update using sed (for more complex updates, would use jq)
+        case "$key" in
+            "conda_command")
+                sed -i.bak 's/"conda_command":[[:space:]]*"[^"]*"/"conda_command": "'"$value"'"/' "$DEVICE_CONFIG_FILE"
+                ;;
+            "setup_completed")
+                sed -i.bak 's/"setup_completed":[[:space:]]*[^,}]*/"setup_completed": '"$value"'/' "$DEVICE_CONFIG_FILE"
+                ;;
+            "last_updated")
+                CURRENT_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+                sed -i.bak 's/"last_updated":[[:space:]]*"[^"]*"/"last_updated": "'"$CURRENT_TIME"'"/' "$DEVICE_CONFIG_FILE"
+                ;;
+        esac
+        # Remove backup file
+        rm -f "${DEVICE_CONFIG_FILE}.bak"
+    fi
+}
     print_status "step" "Detecting system architecture..."
     
     case "$(uname -s)" in
@@ -160,11 +350,21 @@ configure_conda_channels() {
 check_prerequisites() {
     print_status "step" "Checking and installing prerequisites..."
     
+    # Load or create device configuration first
+    if [ ! -f "$DEVICE_CONFIG_FILE" ]; then
+        create_device_config
+    else
+        load_device_config
+    fi
+    
     # Detect system first
     detect_system
     
     # Install miniconda if needed
     install_miniconda
+    
+    # Update config with conda command info
+    update_device_config "conda_command" "$CONDA_CMD"
     
     # Configure channels
     configure_conda_channels
@@ -182,9 +382,13 @@ check_prerequisites() {
         # Configure mamba to use same channels
         mamba config --add channels conda-forge
         mamba config --set channel_priority flexible
+        
+        # Update config
+        update_device_config "conda_command" "mamba"
     else
         CONDA_CMD="conda"
         print_status "info" "Using conda (mamba not available)"
+        update_device_config "conda_command" "conda"
     fi
 }
 
@@ -223,88 +427,59 @@ setup_environment() {
 }
 
 install_dependencies() {
-    print_status "step" "Installing dependencies from conda-forge..."
+    print_status "step" "Installing dependencies from requirements.txt..."
     
-    # Install core dependencies via conda/mamba from conda-forge (faster and more reliable)
-    print_status "info" "Installing core packages via $CONDA_CMD from conda-forge..."
-    
-    # Core web and utility packages
-    CONDA_PACKAGES=(
-        "flask"
-        "lxml" 
-        "markdown"
-        "pytz"
-        "psutil"
-        "beautifulsoup4"
-        "pillow"
-        "pandas"
-        "numpy"
-        "matplotlib"
-        "opencv"
-        "scipy"
-        "requests"
-        "urllib3"
-        "jinja2"
-        "werkzeug"
-        "click"
-        "pyyaml"
-        "toml"
-        "setuptools"
-        "wheel"
-        "pip"
-    )
-    
-    # Install packages in batches to handle dependencies better
-    for package in "${CONDA_PACKAGES[@]}"; do
-        print_status "info" "Installing $package..."
-        $CONDA_CMD install -c conda-forge "$package" -y >/dev/null 2>&1 || \
-            print_status "warning" "Failed to install $package via conda, will try pip"
-    done
-    
-    # Install AI/ML packages that might need special handling
-    print_status "info" "Installing AI/ML packages..."
-    
-    # Try FAISS from conda-forge first
-    if $CONDA_CMD install -c conda-forge faiss-cpu -y >/dev/null 2>&1; then
-        print_status "success" "FAISS installed from conda-forge"
-    else
-        print_status "warning" "FAISS not available from conda-forge, will try pip"
+    # Check if requirements.txt exists
+    if [ ! -f "requirements.txt" ]; then
+        print_status "error" "requirements.txt not found in project root"
+        print_status "info" "Please ensure requirements.txt exists with version-pinned dependencies"
+        exit 1
     fi
     
-    # Try tiktoken and nltk
-    $CONDA_CMD install -c conda-forge nltk -y >/dev/null 2>&1 || \
-        print_status "warning" "NLTK not available from conda-forge, will try pip"
+    print_status "info" "Found requirements.txt - using specified versions"
     
-    print_status "success" "Core conda packages installed"
+    # First install basic conda packages that are commonly available and stable
+    print_status "info" "Installing base packages via $CONDA_CMD from conda-forge..."
+    CONDA_BASE_PACKAGES=(
+        "pip"
+        "setuptools" 
+        "wheel"
+    )
     
-    # Install remaining packages via pip
-    print_status "info" "Installing remaining packages via pip..."
+    for package in "${CONDA_BASE_PACKAGES[@]}"; do
+        $CONDA_CMD install -c conda-forge "$package" -y >/dev/null 2>&1 || true
+    done
     
-    # Upgrade pip first
+    # Upgrade pip to latest version
+    print_status "info" "Upgrading pip..."
     python -m pip install --upgrade pip >/dev/null 2>&1
     
-    # Install packages that are typically only available via pip
-    PIP_PACKAGES=(
-        "tiktoken"
-        "openai"
-        "anthropic"
-        "faiss-cpu"  # backup if conda install failed
-    )
+    # Install all dependencies from requirements.txt with exact versions
+    print_status "info" "Installing dependencies from requirements.txt with specified versions..."
     
-    for package in "${PIP_PACKAGES[@]}"; do
-        print_status "info" "Installing $package via pip..."
-        pip install "$package" --quiet || \
-            print_status "warning" "Failed to install $package via pip"
-    done
-    
-    # Install from requirements.txt if it exists
-    if [ -f "requirements.txt" ]; then
-        print_status "info" "Installing additional requirements from requirements.txt..."
-        pip install -r requirements.txt --quiet || \
-            print_status "warning" "Some requirements.txt packages may have failed"
+    # Use pip install with requirements.txt to respect version constraints
+    if pip install -r requirements.txt --quiet; then
+        print_status "success" "All dependencies installed from requirements.txt"
+    else
+        print_status "warning" "Some packages from requirements.txt may have failed"
+        print_status "info" "Attempting to install packages individually for better error reporting..."
+        
+        # Try installing line by line for better error reporting
+        while IFS= read -r line; do
+            # Skip empty lines and comments
+            if [[ -n "$line" && ! "$line" =~ ^[[:space:]]*# ]]; then
+                package_name=$(echo "$line" | cut -d'=' -f1 | cut -d'>' -f1 | cut -d'<' -f1 | cut -d'!' -f1)
+                print_status "info" "Installing: $line"
+                if pip install "$line" --quiet; then
+                    print_status "success" "$package_name installed"
+                else
+                    print_status "error" "Failed to install: $line"
+                fi
+            fi
+        done < requirements.txt
     fi
     
-    print_status "success" "All dependencies installed"
+    print_status "success" "Dependencies installation completed"
 }
 
 setup_cli() {
@@ -401,8 +576,21 @@ except ImportError as e:
 }
 
 print_completion() {
+    # Update device config to mark setup as complete
+    update_device_config "setup_completed" "true"
+    update_device_config "last_updated" ""
+    
     echo
     print_status "success" "$PROJECT_NAME enhanced setup completed successfully!"
+    echo
+    echo -e "${CYAN}Device Configuration:${NC}"
+    if [ -n "$DEVICE_NICKNAME" ]; then
+        echo -e "  🏷️  Device: ${GREEN}$DEVICE_NICKNAME${NC}"
+    fi
+    if [ -n "$USER_FULL_NAME" ]; then
+        echo -e "  👤 User: ${GREEN}$USER_FULL_NAME${NC}"
+    fi
+    echo -e "  📁 Config: ${GREEN}$DEVICE_CONFIG_FILE${NC}"
     echo
     echo -e "${CYAN}Installation Summary:${NC}"
     echo -e "  ✅ Miniconda: $(conda --version)"
@@ -418,13 +606,10 @@ print_completion() {
     echo -e "${GREEN}4.${NC} Open in browser: ${YELLOW}http://localhost:50080${NC}"
     echo -e "${GREEN}5.${NC} View logs: ${YELLOW}scripts/gob logs${NC}"
     echo
-    echo -e "${CYAN}Manual Activation:${NC}"
-    echo -e "  ${YELLOW}conda activate ${CONDA_ENV}${NC}"
-    echo
-    echo -e "${CYAN}Environment Management:${NC}"
-    echo -e "  List environments: ${YELLOW}conda env list${NC}"
+    echo -e "${CYAN}Configuration Management:${NC}"
+    echo -e "  View config: ${YELLOW}cat $DEVICE_CONFIG_FILE${NC}"
+    echo -e "  Manual activation: ${YELLOW}conda activate ${CONDA_ENV}${NC}"
     echo -e "  Update packages: ${YELLOW}$CONDA_CMD update --all -c conda-forge${NC}"
-    echo -e "  Remove environment: ${YELLOW}conda env remove -n $CONDA_ENV${NC}"
     echo
 }
 
