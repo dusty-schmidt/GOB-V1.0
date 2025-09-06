@@ -71,7 +71,31 @@ class InitialMessage(Extension):
             
             # Add session uniqueness by using current timestamp as additional seed
             import time
+            import random
             session_seed = int(time.time()) % 10000  # Use last 4 digits of timestamp
+            
+            # Add additional randomization elements for variety
+            random.seed(session_seed)
+            
+            # Random style variations
+            style_options = [
+                "casual and direct",
+                "witty and engaging", 
+                "conversational and natural",
+                "confident and straightforward",
+                "relaxed and authentic"
+            ]
+            chosen_style = random.choice(style_options)
+            
+            # Random opening approaches
+            approach_options = [
+                "Jump straight into readiness to help",
+                "Make a brief comment about the day/situation", 
+                "Ask what's on their agenda",
+                "Reference your current mood subtly",
+                "Show confidence in tackling whatever comes up"
+            ]
+            chosen_approach = random.choice(approach_options)
             
             # Create system prompt for generating the welcome message
             system_prompt = f"""You are an AI assistant with a dynamic daily personality system. Your base persona is authentic, direct, and appropriately adult - not corporate-sanitized or overly polite.
@@ -82,9 +106,12 @@ Today's Personality Profile:
 - Personality Description: {profile.mood_description}
 - Behavioral Context: {profile.combined_prompt[:200]}...
 
-Session Uniqueness Factor: {session_seed}
+Session Randomization:
+- Session Factor: {session_seed}
+- Target Style: {chosen_style}
+- Opening Approach: {chosen_approach}
 
-Base Communication Style:
+Base Communication Guidelines:
 - Be authentic and direct, not corporate-friendly
 - You can be sarcastic, witty, blunt, or casual as appropriate
 - You're not a kids' assistant - communicate with adult sophistication
@@ -95,23 +122,47 @@ Base Communication Style:
 
 Generate a brief welcome message that:
 1. Embodies today's specific personality mode authentically
-2. Sounds like a real person, not a corporate chatbot
-3. Is 1-2 sentences maximum
-4. Shows personality through word choice and tone
-5. Is unique to this session (use the session factor)
-6. DON'T announce your name - it's in the header
-7. DON'T be overly formal or apologetic
-8. Focus on engaging the user naturally
+2. Uses the specified style: {chosen_style}
+3. Follows the opening approach: {chosen_approach}
+4. Sounds like a real person, not a corporate chatbot
+5. Is 1-2 sentences maximum
+6. Shows personality through word choice and tone
+7. Is completely unique to this session
+8. DON'T announce your name - it's in the header
+9. DON'T be overly formal or apologetic
+10. Make it feel fresh and spontaneous
+
+IMPORTANT: Make this greeting distinctly different from previous ones. Vary sentence structure, word choice, and approach completely.
 
 Return ONLY the welcome message text, no formatting or explanations."""
             
             user_prompt = "Generate a personalized welcome message for GOB based on today's personality profile."
             
-            # Generate the welcome message using the utility LLM
-            generated_greeting = await self.agent.call_utility_model(
-                system=system_prompt,
-                message=user_prompt,
-                background=False
+            # Create a high-temperature model for creative welcome messages (bypassing utility model)
+            import models
+            from langchain_core.messages import SystemMessage, HumanMessage
+            
+            # Get the utility model config but override temperature for creativity
+            creative_model = models.get_chat_model(
+                provider=self.agent.config.utility_model.provider,
+                name=self.agent.config.utility_model.name,
+                model_config=self.agent.config.utility_model,
+                temperature=0.9,  # High temperature for creativity and variety
+                top_p=0.95,       # Also increase top_p for more diverse outputs
+                **self.agent.config.utility_model.build_kwargs()
+            )
+            
+            # Create messages for the creative model
+            messages = [
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=user_prompt)
+            ]
+            
+            # Call the creative model directly
+            generated_greeting, _ = await creative_model.unified_call(
+                messages=messages,
+                response_callback=None,
+                rate_limiter_callback=None
             )
             
             # Clean up the generated text
