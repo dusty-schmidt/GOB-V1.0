@@ -452,7 +452,7 @@ setup_environment() {
 }
 
 install_dependencies() {
-    print_status "step" "Installing dependencies from requirements.txt..."
+    print_status "step" "Installing dependencies (smart fallback method)..."
     
     # Check if requirements.txt exists
     if [ ! -f "requirements.txt" ]; then
@@ -461,50 +461,123 @@ install_dependencies() {
         exit 1
     fi
     
-    print_status "info" "Found requirements.txt - using specified versions"
+    print_status "info" "Using fastest-first approach with fallback methods"
     
-    # First install basic conda packages that are commonly available and stable
-    print_status "info" "Installing base packages via $CONDA_CMD from conda-forge..."
-    CONDA_BASE_PACKAGES=(
-        "pip"
-        "setuptools" 
-        "wheel"
-    )
+    # Parse requirements.txt and clean up package names for conda
+    declare -a ALL_PACKAGES
+    declare -a FAILED_PACKAGES
     
-    for package in "${CONDA_BASE_PACKAGES[@]}"; do
-        $CONDA_CMD install -c conda-forge "$package" -y >/dev/null 2>&1 || true
+    while IFS= read -r line; do
+        # Skip empty lines and comments
+        if [[ -n "$line" && ! "$line" =~ ^[[:space:]]*# ]]; then
+            # Clean up the line and extract package name
+            clean_line=$(echo "$line" | xargs)  # Remove leading/trailing whitespace
+            if [[ -n "$clean_line" ]]; then
+                ALL_PACKAGES+=("$clean_line")
+            fi
+        fi
+    done < requirements.txt
+    
+    print_status "info" "Found ${#ALL_PACKAGES[@]} packages to install"
+    
+    # Method 1: Try mamba/conda first (fastest, handles dependencies best)
+    print_status "info" "Method 1: Attempting batch install with $CONDA_CMD..."
+    
+    # Convert pip-style requirements to conda-style for common packages
+    declare -a CONDA_COMPATIBLE
+    declare -a PIP_ONLY
+    
+    for package in "${ALL_PACKAGES[@]}"; do
+        package_name=$(echo "$package" | cut -d'=' -f1 | cut -d'>' -f1 | cut -d'<' -f1 | cut -d'!' -f1)
+        
+        # List of packages that are well-supported in conda-forge
+        case "$package_name" in
+            "flask"*|"python-dotenv"|"pytz"|"markdown"|"paramiko"|"psutil"|"GitPython"|\
+            "tiktoken"|"nest-asyncio"|"soundfile"|"pypdf"|"lxml_html_clean"|\
+            "webcolors"|"markdownify"|"pathspec")
+                # Convert to conda-compatible format (remove exact version for flexibility)
+                conda_pkg=$(echo "$package" | sed 's/==/>=/g')
+                CONDA_COMPATIBLE+=("$conda_pkg")
+                ;;
+            *)
+                PIP_ONLY+=("$package")
+                ;;
+        esac
     done
     
-    # Upgrade pip to latest version
-    print_status "info" "Upgrading pip..."
-    python -m pip install --upgrade pip >/dev/null 2>&1
-    
-    # Install all dependencies from requirements.txt with exact versions
-    print_status "info" "Installing dependencies from requirements.txt with specified versions..."
-    
-    # Use pip install with requirements.txt to respect version constraints
-    if pip install -r requirements.txt --quiet; then
-        print_status "success" "All dependencies installed from requirements.txt"
-    else
-        print_status "warning" "Some packages from requirements.txt may have failed"
-        print_status "info" "Attempting to install packages individually for better error reporting..."
-        
-        # Try installing line by line for better error reporting
-        while IFS= read -r line; do
-            # Skip empty lines and comments
-            if [[ -n "$line" && ! "$line" =~ ^[[:space:]]*# ]]; then
-                package_name=$(echo "$line" | cut -d'=' -f1 | cut -d'>' -f1 | cut -d'<' -f1 | cut -d'!' -f1)
-                print_status "info" "Installing: $line"
-                if pip install "$line" --quiet; then
-                    print_status "success" "$package_name installed"
-                else
-                    print_status "error" "Failed to install: $line"
-                fi
-            fi
-        done < requirements.txt
+    # Install conda-compatible packages in one go
+    if [ ${#CONDA_COMPATIBLE[@]} -gt 0 ]; then
+        print_status "info" "Installing ${#CONDA_COMPATIBLE[@]} conda-compatible packages..."
+        if $CONDA_CMD install -c conda-forge "${CONDA_COMPATIBLE[@]}" -y >/dev/null 2>&1; then
+            print_status "success" "✓ Conda packages installed successfully"
+        else
+            print_status "warning" "Some conda packages failed, will retry with pip"
+            # Add failed conda packages back to pip list
+            PIP_ONLY+=("${CONDA_COMPATIBLE[@]}")
+        fi
     fi
     
-    print_status "success" "Dependencies installation completed"
+    # Method 2: Try pip batch install for remaining packages
+    if [ ${#PIP_ONLY[@]} -gt 0 ]; then
+        print_status "info" "Method 2: Attempting pip batch install for ${#PIP_ONLY[@]} packages..."
+        
+        # Upgrade pip first
+        python -m pip install --upgrade pip --quiet >/dev/null 2>&1
+        
+        # Try installing all remaining packages at once
+        if pip install "${PIP_ONLY[@]}" --quiet --no-cache-dir; then
+            print_status "success" "✓ All pip packages installed successfully"
+        else
+            print_status "info" "Batch pip install failed, trying individual packages..."
+            
+            # Method 3: Individual package installation with failure tracking
+            print_status "info" "Method 3: Installing packages individually..."
+            
+            local success_count=0
+            local total_count=${#PIP_ONLY[@]}
+            
+            for package in "${PIP_ONLY[@]}"; do
+                package_name=$(echo "$package" | cut -d'=' -f1 | cut -d'>' -f1 | cut -d'<' -f1 | cut -d'!' -f1)
+                
+                # Special handling for problematic packages
+                if [[ "$package_name" == "kokoro" ]]; then
+                    # Try compatible version for kokoro
+                    if pip install "kokoro>=0.8.0,<0.9" --quiet --no-cache-dir 2>/dev/null; then
+                        print_status "success" "✓ $package_name (compatible version)"
+                        ((success_count++))
+                    else
+                        print_status "warning" "⚠ $package_name skipped (Python 3.12 incompatible)"
+                        FAILED_PACKAGES+=("$package")
+                    fi
+                else
+                    # Regular package installation
+                    if pip install "$package" --quiet --no-cache-dir; then
+                        print_status "success" "✓ $package_name"
+                        ((success_count++))
+                    else
+                        print_status "warning" "⚠ $package_name failed"
+                        FAILED_PACKAGES+=("$package")
+                    fi
+                fi
+            done
+            
+            print_status "info" "Individual install results: $success_count/$total_count successful"
+        fi
+    fi
+    
+    # Summary
+    echo
+    if [ ${#FAILED_PACKAGES[@]} -eq 0 ]; then
+        print_status "success" "All dependencies installed successfully!"
+    else
+        print_status "warning" "Installation completed with ${#FAILED_PACKAGES[@]} failed packages:"
+        for failed in "${FAILED_PACKAGES[@]}"; do
+            echo "  - $failed"
+        done
+        print_status "info" "System should still function - failed packages may be optional"
+    fi
+    
+    print_status "success" "Dependencies installation completed (smart fallback method)"
 }
 
 setup_cli() {
