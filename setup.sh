@@ -139,19 +139,20 @@ setup_cli() {
     print_status "step" "Setting up CLI tool..."
     
     # Make gob executable
-    chmod +x gob
+    chmod +x scripts/gob
+
     print_status "success" "GOB CLI made executable"
     
     # Offer to create system-wide symlink
     if [ -w "/usr/local/bin" ]; then
-        ln -sf "$PROJECT_DIR/gob" /usr/local/bin/gob
+        ln -sf "$PROJECT_DIR/scripts/gob" /usr/local/bin/gob
         print_status "success" "CLI tool linked to /usr/local/bin/gob"
     else
         print_status "info" "Creating system-wide symlink (requires sudo)..."
-        if sudo ln -sf "$PROJECT_DIR/gob" /usr/local/bin/gob 2>/dev/null; then
+        if sudo ln -sf "$PROJECT_DIR/scripts/gob" /usr/local/biscripts/gob 2>/dev/null; then
             print_status "success" "CLI tool linked to /usr/local/bin/gob"
         else
-            print_status "warning" "Could not create system-wide link. Use ./gob instead"
+            print_status "warning" "Could not create system-wide link. Use scripts/gob instead"
         fi
     fi
 }
@@ -160,7 +161,7 @@ run_verification() {
     print_status "step" "Verifying installation..."
     
     # Test CLI tool
-    if ./gob help >/dev/null 2>&1; then
+    if scripts/gob help >/dev/null 2>&1; then
         print_status "success" "CLI tool working correctly"
     else
         print_status "error" "CLI tool verification failed"
@@ -181,10 +182,10 @@ print_completion() {
     print_status "success" "$PROJECT_NAME setup completed successfully!"
     echo
     echo -e "${CYAN}Next steps:${NC}"
-    echo -e "${GREEN}1.${NC} Start GOBV1: ${YELLOW}./gob start${NC}"
-    echo -e "${GREEN}2.${NC} Check status: ${YELLOW}./gob status${NC}"  
+    echo -e "${GREEN}1.${NC} Start GOBV1: ${YELLOW}scripts/gob start${NC}"
+    echo -e "${GREEN}2.${NC} Check status: ${YELLOW}scripts/gob status${NC}"  
     echo -e "${GREEN}3.${NC} Open in browser: ${YELLOW}http://localhost:50080${NC}"
-    echo -e "${GREEN}4.${NC} View logs: ${YELLOW}./gob logs${NC}"
+    echo -e "${GREEN}4.${NC} View logs: ${YELLOW}scripts/gob logs${NC}"
     echo
     echo -e "${CYAN}Configuration:${NC}"
     echo -e "  Directory: ${PROJECT_DIR}"

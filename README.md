@@ -17,7 +17,7 @@ cd GOB-V1.0
 
 ### 3. Start GOBV1
 ```bash
-./gob start
+scripts/gob start
 ```
 
 ### 4. Open in browser
@@ -29,19 +29,19 @@ That's it! 🎉
 
 ```bash
 # Start GOBV1
-./gob start
+scripts/gob start
 
 # Check status  
-./gob status
+scripts/gob status
 
 # View logs
-./gob logs
+scripts/gob logs
 
 # Stop GOBV1
-./gob stop
+scripts/gob stop
 
 # Get help
-./gob help
+scripts/gob help
 ```
 
 ## 📋 Requirements
@@ -73,13 +73,13 @@ conda activate gobv1
 ### Runtime Issues
 ```bash
 # Check detailed status
-./gob status
+scripts/gob status
 
 # View recent logs
-./gob logs 50
+scripts/gob logs 50
 
 # Restart if needed
-./gob restart
+scripts/gob restart
 ```
 
 ### Common Solutions
@@ -103,17 +103,17 @@ conda activate gobv1
 # ...
 
 # Restart to apply changes
-./gob restart
+scripts/gob restart
 
 # Follow logs
-./gob follow
+scripts/gob follow
 ```
 
 ## 📁 Project Structure
 
 ```
 GOB-V1.0/
-├── gob                     # CLI management tool
+├── gob -> scriptscripts/gob       # CLI management tool (symlink)
 ├── setup.sh               # Automatic setup script
 ├── agent.py               # Core agent system
 ├── models.py              # LLM configuration
@@ -123,7 +123,7 @@ GOB-V1.0/
 ├── agents/                # AI agent definitions
 ├── python/                # Framework core
 ├── webui/                 # Web interface
-├── scripts/               # Utility scripts
+├── scripts/               # Utility scripts\n│   └── gob                # CLI management script
 ├── docs/                  # Documentation
 └── README.md              # This file
 ```

@@ -14,7 +14,7 @@ GRAY='\033[0;37m'
 NC='\033[0m' # No Color
 
 # Configuration
-GOB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+GOB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GOB_HOST="0.0.0.0"
 GOB_PORT="50080"
 GOB_URL="http://localhost:${GOB_PORT}"

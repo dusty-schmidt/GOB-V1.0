@@ -53,7 +53,7 @@
 ./gob logs 50   # Show recent log entries
 ./gob follow    # Real-time log monitoring
 ./gob url       # Open GOB in browser
-./gob help      # Usage documentation
+scripts/gob help      # Usage documentation
 ```
 
 ### **4. Legacy Code Management**

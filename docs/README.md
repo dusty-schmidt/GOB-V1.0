@@ -9,7 +9,7 @@ Welcome to GOBV1 (General Orchestrator Bot V1.0) documentation.
 - **Detailed Setup**: See [SETUP.md](SETUP.md) for complete instructions
 
 **Already have GOBV1?**
-- **Daily Usage**: `./gob help` for all commands
+- **Daily Usage**: `scripts/gob help` for all commands
 - **Web Interface**: http://localhost:50080
 
 ## 📚 Documentation
@@ -36,7 +36,7 @@ Welcome to GOBV1 (General Orchestrator Bot V1.0) documentation.
 ### 🆕 **First Time Setup**
 1. **Start**: [Main README](../README.md) ← **Start here**
 2. **Run**: `./setup.sh` (automatic)
-3. **Go**: `./gob start`
+3. **Go**: `scripts/gob start`
 
 ### 🔧 **Advanced Setup**  
 1. **Read**: [SETUP.md](SETUP.md) ← Manual installation
@@ -50,14 +50,14 @@ Welcome to GOBV1 (General Orchestrator Bot V1.0) documentation.
 ./setup.sh
 
 # Daily usage
-./gob start      # Start GOBV1
-./gob status     # Check status
-./gob logs       # View logs
-./gob stop       # Stop GOBV1
-./gob help       # All commands
+scripts/gob start      # Start GOBV1
+scripts/gob status     # Check status
+scripts/gob logs       # View logs
+scripts/gob stop       # Stop GOBV1
+scripts/gob help       # All commands
 
 # Troubleshooting
-./gob restart    # Restart if issues
+scripts/gob restart    # Restart if issues
 ./setup.sh       # Re-run setup
 ```
 
@@ -79,7 +79,7 @@ Welcome to GOBV1 (General Orchestrator Bot V1.0) documentation.
 Once running:
 - **Web UI**: http://localhost:50080
 - **CLI**: `./gob` commands
-- **Logs**: `./gob logs` or `./gob follow`
+- **Logs**: `scripts/gob logs` or `scripts/gob follow`
 
 ## 🚨 Common Issues & Solutions
 
@@ -97,9 +97,9 @@ source ~/.bashrc
 ### Runtime Problems
 ```bash
 # Won't start
-./gob status                  # Check what's wrong
-./gob logs 50                 # Check error logs
-./gob restart                 # Try restart
+scripts/gob status                  # Check what's wrong
+scripts/gob logs 50                 # Check error logs
+scripts/gob restart                 # Try restart
 
 # Port busy
 ss -tulpn | grep 50080        # Check what's using port
@@ -118,9 +118,9 @@ pip install -r requirements.txt --force-reinstall
 
 ## 🆘 Getting Help
 
-1. **Check status**: `./gob status`
-2. **Check logs**: `./gob logs 50` 
-3. **Restart**: `./gob restart`
+1. **Check status**: `scripts/gob status`
+2. **Check logs**: `scripts/gob logs 50` 
+3. **Restart**: `scripts/gob restart`
 4. **Re-setup**: `./setup.sh`
 5. **Documentation**: Browse this `docs/` directory
 6. **GitHub Issues**: [Report problems](https://github.com/dusty-schmidt/GOB-V1.0/issues)

@@ -19,7 +19,7 @@ cd GOB-V1.0
 
 ### 2. Start GOBV1
 ```bash
-./gob start
+scripts/gob start
 ```
 
 ### 3. Access GOBV1
@@ -84,12 +84,12 @@ pip install -r requirements.txt
 chmod +x gob
 
 # Optional: Create system-wide link
-sudo ln -sf $(pwd)/gob /usr/local/bin/gob
+sudo ln -sf $(pwdscripts/gob /usr/local/bin/gob
 ```
 
 ### Step 5: Start GOBV1
 ```bash
-./gob start
+scripts/gob start
 ```
 
 ---
@@ -127,14 +127,14 @@ The `gob` command provides complete management:
 
 | Command | Description | Example |
 |---------|-------------|---------|
-| `./gob start` | Start GOBV1 server | `./gob start` |
-| `./gob stop` | Stop GOBV1 server | `./gob stop` |
-| `./gob restart` | Restart GOBV1 server | `./gob restart` |
-| `./gob status` | Show server status | `./gob status` |
-| `./gob logs [N]` | Show last N log lines | `./gob logs 100` |
-| `./gob follow` | Follow logs in real-time | `./gob follow` |
-| `./gob url` | Open GOBV1 in browser | `./gob url` |
-| `./gob help` | Show help | `./gob help` |
+| `scripts/gob start` | Start GOBV1 server | `scripts/gob start` |
+| `scripts/gob stop` | Stop GOBV1 server | `scripts/gob stop` |
+| `scripts/gob restart` | Restart GOBV1 server | `scripts/gob restart` |
+| `scripts/gob status` | Show server status | `scripts/gob status` |
+| `scripts/gob logs [N]` | Show last N log lines | `scripts/gob logs 100` |
+| `scripts/gob follow` | Follow logs in real-time | `scripts/gob follow` |
+| `scripts/gob url` | Open GOBV1 in browser | `scripts/gob url` |
+| `scripts/gob help` | Show help | `scripts/gob help` |
 
 ---
 
@@ -195,16 +195,16 @@ ss -tulpn | grep 50080
 conda activate gobv1
 
 # Check detailed logs
-./gob logs 50
+scripts/gob logs 50
 
 # Try restart
-./gob restart
+scripts/gob restart
 ```
 
 **Web interface not accessible:**
 ```bash
 # Check if server is running
-./gob status
+scripts/gob status
 
 # Test local connection
 curl -I http://localhost:50080
@@ -227,12 +227,12 @@ pip install -r requirements.txt --force-reinstall
 **High memory usage:**
 - Ensure you have 8GB+ RAM
 - Close other applications
-- Check `./gob logs` for memory warnings
+- Check `scripts/gob logs` for memory warnings
 
 **Slow startup:**
 - First startup downloads models (normal)
 - Subsequent starts should be faster
-- Check `./gob follow` for progress
+- Check `scripts/gob follow` for progress
 
 ---
 
@@ -241,15 +241,15 @@ pip install -r requirements.txt --force-reinstall
 ### Starting Development Session
 ```bash
 cd GOB-V1.0
-./gob start
-./gob url  # Opens browser
+scripts/gob start
+scripts/gob url  # Opens browser
 ```
 
 ### Making Changes
 1. Edit code in your IDE
 2. Save changes
-3. Restart: `./gob restart`
-4. Test: `./gob logs`
+3. Restart: `scripts/gob restart`
+4. Test: `scripts/gob logs`
 
 ### Environment Management
 ```bash
@@ -283,7 +283,7 @@ python run_ui.py --host 0.0.0.0 --port 50080 --debug
 # Or use environment variables
 export WEB_UI_HOST=127.0.0.1
 export WEB_UI_PORT=8080
-./gob start
+scripts/gob start
 ```
 
 ### Resource Limits
@@ -303,23 +303,23 @@ After setup, verify everything works:
 
 ```bash
 # 1. Check CLI tool
-./gob help
+scripts/gob help
 
 # 2. Check environment
 conda activate gobv1
 python -c "import flask, numpy, pandas"
 
 # 3. Start GOBV1
-./gob start
+scripts/gob start
 
 # 4. Check web response
 curl -I http://localhost:50080
 
 # 5. Check logs
-./gob logs 10
+scripts/gob logs 10
 
 # 6. Stop GOBV1
-./gob stop
+scripts/gob stop
 ```
 
 If all steps pass, your installation is working correctly!
@@ -328,9 +328,9 @@ If all steps pass, your installation is working correctly!
 
 ## 🆘 Getting Additional Help
 
-1. **Check logs**: `./gob logs` for recent activity
-2. **Check status**: `./gob status` for server state
-3. **Restart**: `./gob restart` often fixes issues
+1. **Check logs**: `scripts/gob logs` for recent activity
+2. **Check status**: `scripts/gob status` for server state
+3. **Restart**: `scripts/gob restart` often fixes issues
 4. **Re-setup**: `./setup.sh` recreates environment
 5. **Documentation**: Browse `docs/` directory
 6. **GitHub Issues**: [Report bugs](https://github.com/dusty-schmidt/GOB-V1.0/issues)
