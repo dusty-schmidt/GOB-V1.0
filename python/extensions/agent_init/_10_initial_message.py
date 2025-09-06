@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 from agent import LoopData
 from python.helpers.extension import Extension
+from python.helpers.state_manager import get_state_manager
 
 # Add the randomized GOB project to Python path
 gob_personality_path = Path(__file__).parent.parent.parent.parent / "dev" / "projects" / "randomized-gob" / "src"
@@ -44,10 +45,14 @@ class InitialMessage(Extension):
         initial_message_json = json.loads(initial_message)
         initial_message_text = initial_message_json.get("tool_args", {}).get("text", "Hello! How can I help you?")
 
+        # Get today's GOB title from state manager
+        state_manager = get_state_manager()
+        gob_title = state_manager.get_gob_title()
+        
         # Add to log (green bubble) for immediate UI display
         self.agent.context.log.log(
             type="response",
-            heading="GOB: the Grandmaster Of Backups",
+            heading=gob_title,
             content=initial_message_text,
             finished=True,
             update_progress="none",
