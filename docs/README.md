@@ -19,12 +19,10 @@ Welcome to GOBV1 (General Orchestrator Bot V1.0) documentation.
 |----------|-------------|-------------|
 | **[../README.md](../README.md)** | **Quick start guide** | **First time users** |
 | **[SETUP.md](SETUP.md)** | **Complete setup guide** | **Detailed installation** |
-| [DEBIAN_SETUP.md](DEBIAN_SETUP.md) | Legacy Docker setup | Docker deployments |
 
 ### Architecture & System
 | Document | Description |
 |----------|-------------|
-| [DOCKER_ARCHITECTURE.md](DOCKER_ARCHITECTURE.md) | Docker build system details |
 | [AGENT_NAMING_SYSTEM.md](AGENT_NAMING_SYSTEM.md) | Dynamic agent identity system |
 | [STARTUP_ANALYSIS.md](STARTUP_ANALYSIS.md) | System startup process |
 
@@ -44,10 +42,6 @@ Welcome to GOBV1 (General Orchestrator Bot V1.0) documentation.
 1. **Read**: [SETUP.md](SETUP.md) ← Manual installation
 2. **Configure**: Custom environment, ports, etc.
 3. **Deploy**: Production configurations
-
-### 🐳 **Docker Deployment**
-1. **Legacy**: [DEBIAN_SETUP.md](DEBIAN_SETUP.md)
-2. **Architecture**: [DOCKER_ARCHITECTURE.md](DOCKER_ARCHITECTURE.md)
 
 ## ⚡ Quick Commands
 
@@ -78,7 +72,7 @@ Welcome to GOBV1 (General Orchestrator Bot V1.0) documentation.
 ### Recommended  
 - **RAM**: 16GB
 - **CPU**: 4+ cores
-- **Disk**: 10GB free space
+- **Disk**: 5GB free space
 
 ## 📍 Access Points
 

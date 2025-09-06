@@ -91,7 +91,6 @@ conda activate gobv1
 
 - **[docs/](docs/)** - Complete documentation
 - **[Setup Guide](docs/SETUP.md)** - Detailed manual setup
-- **[Architecture](docs/DOCKER_ARCHITECTURE.md)** - System architecture
 - **[Troubleshooting](docs/README.md)** - Common issues and solutions
 
 ## 🏗️ Development
@@ -108,6 +107,25 @@ conda activate gobv1
 
 # Follow logs
 ./gob follow
+```
+
+## 📁 Project Structure
+
+```
+GOB-V1.0/
+├── gob                     # CLI management tool
+├── setup.sh               # Automatic setup script
+├── agent.py               # Core agent system
+├── models.py              # LLM configuration
+├── run_ui.py              # Main server entry point
+├── requirements.txt       # Python dependencies
+├── .env                   # Configuration (create this)
+├── agents/                # AI agent definitions
+├── python/                # Framework core
+├── webui/                 # Web interface
+├── scripts/               # Utility scripts
+├── docs/                  # Documentation
+└── README.md              # This file
 ```
 
 ## ✅ What Works Out of the Box
