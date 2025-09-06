@@ -14,11 +14,11 @@ GRAY='\033[0;37m'
 NC='\033[0m' # No Color
 
 # Configuration
-GOB_DIR="/home/ds/GOB/gob"
+GOB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GOB_HOST="0.0.0.0"
 GOB_PORT="50080"
 GOB_URL="http://localhost:${GOB_PORT}"
-CONDA_ENV="gob"
+CONDA_ENV="gobv1"
 LOG_FILE="${GOB_DIR}/gob_output.log"
 PID_FILE="${GOB_DIR}/.gob.pid"
 

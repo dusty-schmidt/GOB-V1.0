@@ -1,136 +1,106 @@
-# GOBV1 Setup Guide
+# GOBV1 Complete Setup Guide
 
-**Updated**: 2025-09-06  
-**Version**: 1.0  
-**Approach**: Native conda environment with CLI management
+This guide provides detailed setup instructions for GOBV1 (General Orchestrator Bot V1.0).
 
 ## 🎯 Overview
 
-GOBV1 (General Orchestrator Bot V1.0) is an advanced AI agent orchestration system. This guide covers the modern native setup using conda environments and the `gob` CLI manager for optimal performance and ease of use.
+GOBV1 is an advanced AI agent orchestration system. This guide covers both **automatic setup** (recommended) and **manual setup** for advanced users.
 
-## 📋 Prerequisites
+## 🚀 Option 1: Automatic Setup (Recommended)
 
-- **Operating System**: Linux (Debian/Ubuntu tested) or macOS
-- **Python**: 3.11+ via Miniconda or Anaconda
-- **Memory**: 8GB+ RAM recommended
-- **Storage**: 2GB+ free space for dependencies
+The easiest way to get started:
 
-## 🚀 Quick Start
-
-### 1. Install Miniconda (if not already installed)
-
+### 1. Clone and Setup
 ```bash
-# Download and install Miniconda
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-bash Miniconda3-latest-Linux-x86_64.sh
-
-# Reload your shell
-source ~/.bashrc
+git clone https://github.com/dusty-schmidt/GOB-V1.0.git
+cd GOB-V1.0
+./setup.sh
 ```
 
-### 2. Install Mamba (faster package manager)
-
+### 2. Start GOBV1
 ```bash
+./gob start
+```
+
+### 3. Access GOBV1
+Open http://localhost:50080 in your browser.
+
+**That's it!** The setup script handles everything automatically.
+
+---
+
+## 🔧 Option 2: Manual Setup
+
+For advanced users who want more control:
+
+### Prerequisites
+- **OS**: Linux, macOS, or Windows with WSL2
+- **RAM**: 8GB+ recommended  
+- **Disk**: 2GB+ free space
+- **Python**: 3.11+ via Miniconda/Anaconda
+
+### Step 1: Install Miniconda (if needed)
+```bash
+# Download Miniconda
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+
+# Install
+bash Miniconda3-latest-Linux-x86_64.sh
+
+# Reload shell
+source ~/.bashrc
+
+# Install mamba (optional but faster)
 conda install mamba -c conda-forge -y
 ```
 
-### 3. Clone GOBV1 Repository
-
+### Step 2: Clone Repository
 ```bash
-# Clone the repository
-git clone https://github.com/dusty-schmidt/GOB-V1.0.git /home/ds/GOB
-cd /home/ds/GOB
+git clone https://github.com/dusty-schmidt/GOB-V1.0.git
+cd GOB-V1.0
 ```
 
-### 4. Create and Setup Environment
-
+### Step 3: Create Environment
 ```bash
-# Create conda environment with Python 3.13 (using your existing setup)
+# Create conda environment
 mamba create -n gobv1 python=3.13 -y
 
-# Activate the environment
-eval "$(mamba shell hook --shell bash)"
+# Activate environment
 mamba activate gobv1
 
-# Install core dependencies via mamba (faster)
-mamba install -c conda-forge flask docker-py lxml markdown pytz psutil \
-  tiktoken nltk beautifulsoup4 pillow faiss-cpu pandas numpy -y
-
-# Install AI/ML packages
-mamba install -c conda-forge matplotlib opencv-python scipy -y
+# Install core packages (faster via conda)
+mamba install -c conda-forge \
+  flask lxml markdown pytz psutil tiktoken \
+  nltk beautifulsoup4 pillow faiss-cpu \
+  pandas numpy matplotlib opencv scipy -y
 
 # Install remaining packages via pip
 pip install -r requirements.txt
 ```
 
-### 5. Install GOBV1 CLI Manager
-
-The GOBV1 CLI tool should already be in the repository. Make it available system-wide:
-
+### Step 4: Setup CLI Tool
 ```bash
-# Make the CLI executable
-chmod +x gob_executable
+# Make CLI executable
+chmod +x gob
 
-# Create system-wide symlink (requires sudo)
-sudo ln -sf $(pwd)/gob_executable /usr/local/bin/gob
+# Optional: Create system-wide link
+sudo ln -sf $(pwd)/gob /usr/local/bin/gob
 ```
 
-### 6. Start GOBV1
-
+### Step 5: Start GOBV1
 ```bash
-# Start GOBV1 server
-gob start
-
-# Check status
-gob status
-
-# View logs if needed
-gob logs
+./gob start
 ```
 
-### 7. Access GOBV1
+---
 
-Open your browser and navigate to: **http://localhost:50080**
-
-## 🔧 CLI Commands
-
-The `gob` command provides complete management of your GOBV1 instance:
-
-| Command | Description | Example |
-|---------|-------------|---------|
-| `gob start` | Start the GOBV1 server | `gob start` |
-| `gob stop` | Stop the GOBV1 server | `gob stop` |
-| `gob restart` | Restart the GOBV1 server | `gob restart` |
-| `gob status` | Show detailed server status | `gob status` |
-| `gob logs [lines]` | Show recent log entries | `gob logs 100` |
-| `gob follow` | Follow logs in real-time | `gob follow` |
-| `gob url` | Open GOBV1 in browser | `gob url` |
-| `gob help` | Show help information | `gob help` |
-
-## 📁 Directory Structure
-
-```
-/home/ds/GOB/                       # Main GOBV1 directory
-├── docs/                            # Documentation
-├── python/                          # Core Python application
-├── webui/                           # Web interface files
-├── agents/                          # AI agent definitions
-├── scripts/                         # Utility scripts
-├── docker/                          # Docker configs (for production)
-├── gob_executable                  # CLI management script
-├── run_ui.py                       # Core Flask application
-├── requirements.txt                # Python dependencies
-└── README.md                       # Project overview
-```
-
-## 🔧 Configuration
+## 🎛️ Configuration
 
 ### Environment Variables
-
-Create or edit `.env` file in the GOB directory:
+Create/edit `.env` file in project directory:
 
 ```bash
-# Web UI Configuration
+# Web Interface
 WEB_UI_HOST=0.0.0.0
 WEB_UI_PORT=50080
 
@@ -138,158 +108,235 @@ WEB_UI_PORT=50080
 AUTH_LOGIN=your_username
 AUTH_PASSWORD=your_password
 
-# API Keys (add your keys here)
+# API Keys
 OPENAI_API_KEY=your_openai_key
-# ... other API keys
+ANTHROPIC_API_KEY=your_anthropic_key
+# Add other API keys as needed
 ```
 
 ### Port Configuration
-
-- **Default HTTP Port**: 50080
-- **SSH Port** (if using Docker): 50022
-- **Change ports**: Edit `WEB_UI_PORT` in `.env` or use `--port` argument
-
-## 🚨 Troubleshooting
-
-### GOBV1 Won't Start
-
-```bash
-# Check conda environment
-mamba env list | grep gobv1
-
-# Check if port is in use
-ss -tulpn | grep 50080
-
-# Check detailed logs
-gob logs 50
-
-# Try restarting
-gob restart
-```
-
-### Dependencies Issues
-
-```bash
-# Reinstall dependencies in conda environment
-mamba activate gobv1
-pip install -r requirements.txt --force-reinstall
-```
-
-### Permission Issues
-
-```bash
-# Make sure CLI script is executable
-chmod +x gob
-
-# Check symlink
-ls -la /usr/local/bin/gob
-```
-
-### Process Management
-
-```bash
-# If GOB process becomes unresponsive
-pkill -f "python run_ui.py"
-gob start
-
-# Check for zombie processes
-ps aux | grep python | grep run_ui
-```
-
-## 🔄 Daily Usage
-
-### Starting a Development Session
-
-```bash
-# Navigate to GOBV1 directory
-cd /home/ds/GOB
-
-# Start GOB
-gob start
-
-# Open in browser
-gob url
-# OR manually: http://localhost:50080
-```
-
-### Making Changes
-
-1. Edit files in the GOBV1 directory
-2. Changes to Python files require a restart: `gob restart`
-3. Web UI changes may not require restart
-4. Monitor logs: `gob follow`
-
-### Stopping Development
-
-```bash
-# Stop GOBV1 server
-gob stop
-```
-
-## 🌐 Production Deployment
-
-For production deployments, you can still use Docker:
-
-```bash
-# Build Docker image
-docker build -t gobv1-prod -f DockerfileLocal .
-
-# Run production container
-docker run -d --name gobv1-prod -p 80:80 gobv1-prod
-```
-
-See `docs/DOCKER_ARCHITECTURE.md` for detailed Docker deployment information.
-
-## 📚 Additional Documentation
-
-- **Project Architecture**: See individual files in `docs/`
-- **API Documentation**: Available at http://localhost:50080/docs (when running)
-- **Agent Development**: See `agents/` directory
-- **Troubleshooting**: This document + `gob logs`
-
-## 🔄 Migration from Docker Setup
-
-If you're migrating from the old Docker-based setup:
-
-1. **Stop old containers**: `docker stop g-o-b g-o-b-dev`
-2. **Follow this setup guide** from step 1
-3. **Your data is preserved** in the GOBV1 directory
-4. **Old scripts are archived** in `.vault/obsolete-scripts/`
-
-## 🆘 Getting Help
-
-1. **Check logs**: `gob logs` or `gob follow`
-2. **Check status**: `gob status` 
-3. **Restart if needed**: `gob restart`
-4. **Review this documentation**
-5. **Check the repository issues**: GitHub issues page
+- **Default Port**: 50080
+- **Change Port**: Edit `WEB_UI_PORT` in `.env`
+- **Check Port Usage**: `ss -tulpn | grep 50080`
 
 ---
 
-## ✅ Quick Verification
+## 🔧 CLI Commands
+
+The `gob` command provides complete management:
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `./gob start` | Start GOBV1 server | `./gob start` |
+| `./gob stop` | Stop GOBV1 server | `./gob stop` |
+| `./gob restart` | Restart GOBV1 server | `./gob restart` |
+| `./gob status` | Show server status | `./gob status` |
+| `./gob logs [N]` | Show last N log lines | `./gob logs 100` |
+| `./gob follow` | Follow logs in real-time | `./gob follow` |
+| `./gob url` | Open GOBV1 in browser | `./gob url` |
+| `./gob help` | Show help | `./gob help` |
+
+---
+
+## 📁 Directory Structure
+
+```
+GOB-V1.0/
+├── gob                     # CLI management tool
+├── setup.sh               # Automatic setup script
+├── agent.py               # Core agent system
+├── models.py              # LLM configuration
+├── run_ui.py              # Main server entry point
+├── requirements.txt       # Python dependencies
+├── .env                   # Configuration (create this)
+├── agents/                # AI agent definitions
+├── python/                # Framework core
+├── webui/                 # Web interface
+├── scripts/               # Utility scripts
+├── docs/                  # Documentation
+└── README.md              # Quick start guide
+```
+
+---
+
+## 🚨 Troubleshooting
+
+### Setup Issues
+
+**Setup script fails:**
+```bash
+# Check if conda is installed
+conda --version
+
+# Run setup again
+./setup.sh
+
+# Check setup log for errors
+```
+
+**Environment not found:**
+```bash
+# List environments
+conda env list
+
+# Recreate environment
+conda env remove -n gobv1
+./setup.sh
+```
+
+### Runtime Issues
+
+**GOBV1 won't start:**
+```bash
+# Check if port is in use
+ss -tulpn | grep 50080
+
+# Check environment is activated
+conda activate gobv1
+
+# Check detailed logs
+./gob logs 50
+
+# Try restart
+./gob restart
+```
+
+**Web interface not accessible:**
+```bash
+# Check if server is running
+./gob status
+
+# Test local connection
+curl -I http://localhost:50080
+
+# Check firewall settings
+```
+
+**Dependencies issues:**
+```bash
+# Reinstall dependencies
+conda activate gobv1
+pip install -r requirements.txt --force-reinstall
+
+# Or recreate environment
+./setup.sh
+```
+
+### Performance Issues
+
+**High memory usage:**
+- Ensure you have 8GB+ RAM
+- Close other applications
+- Check `./gob logs` for memory warnings
+
+**Slow startup:**
+- First startup downloads models (normal)
+- Subsequent starts should be faster
+- Check `./gob follow` for progress
+
+---
+
+## 🔄 Daily Development Workflow
+
+### Starting Development Session
+```bash
+cd GOB-V1.0
+./gob start
+./gob url  # Opens browser
+```
+
+### Making Changes
+1. Edit code in your IDE
+2. Save changes
+3. Restart: `./gob restart`
+4. Test: `./gob logs`
+
+### Environment Management
+```bash
+# Manual activation (if needed)
+conda activate gobv1
+
+# Update dependencies
+pip install -r requirements.txt
+
+# Check Python version
+python --version
+```
+
+---
+
+## 🔧 Advanced Configuration
+
+### Custom Environment Location
+```bash
+# If you want environment elsewhere
+export CONDA_ENV_PATH=/path/to/your/envs
+./setup.sh
+```
+
+### Development Mode
+```bash
+# Run directly with Python
+conda activate gobv1
+python run_ui.py --host 0.0.0.0 --port 50080 --debug
+
+# Or use environment variables
+export WEB_UI_HOST=127.0.0.1
+export WEB_UI_PORT=8080
+./gob start
+```
+
+### Resource Limits
+```bash
+# Limit memory usage (Linux)
+export GOBV1_MAX_MEMORY=4G
+
+# Set CPU cores
+export GOBV1_CPU_CORES=4
+```
+
+---
+
+## ✅ Verification Checklist
 
 After setup, verify everything works:
 
 ```bash
-# 1. Check GOBV1 status
-gob status
+# 1. Check CLI tool
+./gob help
 
-# 2. Verify HTTP response
+# 2. Check environment
+conda activate gobv1
+python -c "import flask, numpy, pandas"
+
+# 3. Start GOBV1
+./gob start
+
+# 4. Check web response
 curl -I http://localhost:50080
 
-# 3. Check recent logs
-gob logs 10
+# 5. Check logs
+./gob logs 10
 
-# 4. Open in browser
-gob url
+# 6. Stop GOBV1
+./gob stop
 ```
 
-You should see:
-- ✅ GOBV1 status showing "running"
-- ✅ HTTP 200 OK response
-- ✅ Clean startup logs
-- ✅ GOBV1 web interface in browser
+If all steps pass, your installation is working correctly!
 
 ---
 
-**Setup complete!** 🎉 Your GOBV1 instance is ready for development and use.
+## 🆘 Getting Additional Help
+
+1. **Check logs**: `./gob logs` for recent activity
+2. **Check status**: `./gob status` for server state
+3. **Restart**: `./gob restart` often fixes issues
+4. **Re-setup**: `./setup.sh` recreates environment
+5. **Documentation**: Browse `docs/` directory
+6. **GitHub Issues**: [Report bugs](https://github.com/dusty-schmidt/GOB-V1.0/issues)
+
+---
+
+**Setup Complete!** 🎉 
+
+Your GOBV1 installation should now be ready for use. Access it at http://localhost:50080 and start orchestrating AI agents!

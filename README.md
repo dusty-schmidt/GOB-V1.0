@@ -1,135 +1,131 @@
-# GOB (General Orchestrator Bot)
+# GOBV1 - General Orchestrator Bot V1.0
 
-A customized AI agent system built on Agent Zero, focused on orchestration and autonomous task management.
+An advanced AI agent orchestration system for autonomous task management.
 
-## 🚀 Quick Start
+## ⚡ Quick Start
 
-### Native Development (Recommended)
+### 1. Clone the repository
+```bash
+git clone https://github.com/dusty-schmidt/GOB-V1.0.git
+cd GOB-V1.0
+```
+
+### 2. Run automatic setup
+```bash
+./setup.sh
+```
+
+### 3. Start GOBV1
+```bash
+./gob start
+```
+
+### 4. Open in browser
+http://localhost:50080
+
+That's it! 🎉
+
+## 🔧 Daily Usage
 
 ```bash
-# Start GOB server
+# Start GOBV1
 ./gob start
 
-# Check status and health
+# Check status  
+./gob status
+
+# View logs
+./gob logs
+
+# Stop GOBV1
+./gob stop
+
+# Get help
+./gob help
+```
+
+## 📋 Requirements
+
+- **Linux** or **macOS** (Windows with WSL2)
+- **8GB+ RAM** recommended
+- **2GB free disk space**
+- **Internet connection** for setup
+
+The setup script will automatically install:
+- Miniconda (if needed)
+- Python environment with all dependencies
+- GOBV1 CLI tool
+
+## 🆘 Troubleshooting
+
+### Setup Issues
+```bash
+# Re-run setup if something failed
+./setup.sh
+
+# Check if conda is installed
+conda --version
+
+# Manual environment activation
+conda activate gobv1
+```
+
+### Runtime Issues
+```bash
+# Check detailed status
 ./gob status
 
 # View recent logs
-./gob logs
+./gob logs 50
 
-# Open in browser
-./gob url
-
-# Stop server
-./gob stop
+# Restart if needed
+./gob restart
 ```
 
-**Default Access**: http://localhost:50080
-
-### Requirements
-- **Python**: 3.11+ (via Miniconda/Anaconda)
-- **Environment**: `gob` conda environment with all dependencies
-- **System**: Linux/macOS/Windows with bash support
-
----
-
-## 📋 Setup Process
-
-### 1. Environment Setup
-```bash
-# Create and activate conda environment
-conda create -n gob python=3.11
-conda activate gob
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-### 2. Configuration
-```bash
-# Run initial setup
-python scripts/prepare.py
-
-# Optional: Preload models
-python scripts/preload.py
-```
-
-### 3. Launch GOB
-```bash
-# Using the CLI tool (auto-detects environment)
-./gob start
-
-# Or directly
-python run_ui.py --host 0.0.0.0 --port 50080
-```
-
----
-
-## 📁 Project Structure
-
-```
-gob/
-├── gob                 # CLI management tool
-├── agent.py           # Core agent system
-├── models.py          # LLM configuration
-├── initialize.py      # System initialization
-├── run_ui.py          # Main server entry point
-├── run_tunnel.py      # Tunnel server
-├── scripts/           # Utility scripts
-│   ├── preload.py     # Model preloading
-│   ├── prepare.py     # Environment setup
-│   └── update_reqs.py # Requirements updater
-├── python/            # Framework core
-├── webui/             # Web interface
-├── docs/              # Documentation
-└── worklogs/          # Development history
-```
-
----
-
-## 🔧 CLI Management
-
-The `./gob` script provides comprehensive server management:
-
-| Command | Description |
-|---------|-------------|
-| `./gob start` | Start server with health checks |
-| `./gob stop` | Graceful shutdown |
-| `./gob restart` | Stop and start server |
-| `./gob status` | Show server status and process info |
-| `./gob logs [N]` | Show last N log lines (default: 50) |
-| `./gob follow` | Follow logs in real-time |
-| `./gob url` | Open GOB in browser |
-| `./gob help` | Show all available commands |
-
----
+### Common Solutions
+- **Port in use**: Another service using port 50080
+- **Environment not found**: Run `./setup.sh` again
+- **Permission denied**: Make sure `./gob` and `./setup.sh` are executable
 
 ## 📚 Documentation
 
-- **[Setup Guide](docs/SETUP.md)** - Detailed installation instructions
-- **[Development Worklogs](worklogs/)** - Session notes and progress tracking
-- **[TODO List](TODO.md)** - Planned improvements and features
+- **[docs/](docs/)** - Complete documentation
+- **[Setup Guide](docs/SETUP.md)** - Detailed manual setup
+- **[Architecture](docs/DOCKER_ARCHITECTURE.md)** - System architecture
+- **[Troubleshooting](docs/README.md)** - Common issues and solutions
+
+## 🏗️ Development
+
+```bash
+# Activate environment
+conda activate gobv1
+
+# Make changes to code
+# ...
+
+# Restart to apply changes
+./gob restart
+
+# Follow logs
+./gob follow
+```
+
+## ✅ What Works Out of the Box
+
+- ✅ **Automatic setup** - One command installation
+- ✅ **CLI management** - Simple start/stop/status commands  
+- ✅ **Web interface** - Modern browser-based UI
+- ✅ **Agent orchestration** - Multiple AI agents working together
+- ✅ **Task management** - Autonomous task execution
+- ✅ **Logging** - Comprehensive activity logs
+- ✅ **Cross-platform** - Linux, macOS, WSL2
+
+## 🔗 Links
+
+- **Repository**: https://github.com/dusty-schmidt/GOB-V1.0
+- **Web Interface**: http://localhost:50080 (when running)
+- **Issues**: https://github.com/dusty-schmidt/GOB-V1.0/issues
 
 ---
 
-## 🛠️ Development
-
-### Making Changes
-1. Edit code in your preferred IDE
-2. Test changes: `./gob restart`
-3. View logs: `./gob logs` or `./gob follow`
-4. Commit significant changes and update worklogs
-
-### Adding Dependencies
-```bash
-# Add to requirements.txt, then:
-pip install -r requirements.txt
-# Update lockfile:
-python scripts/update_reqs.py
-```
-
-### Environment Management
-- GOB automatically detects and activates the `gob` conda environment
-- Supports both `mamba` and `conda` package managers
-- Configuration stored in environment variables and settings files
-
-
+**Need help?** Check the [documentation](docs/) or open an [issue](https://github.com/dusty-schmidt/GOB-V1.0/issues).

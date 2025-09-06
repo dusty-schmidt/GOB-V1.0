@@ -1,91 +1,142 @@
 # GOBV1 Documentation
 
-Welcome to the GOBV1 (General Orchestrator Bot V1.0) documentation. This directory contains comprehensive guides for setup, configuration, and development.
+Welcome to GOBV1 (General Orchestrator Bot V1.0) documentation.
 
-## 🎯 Quick Start
+## 🚀 Getting Started
 
-**New to GOBV1?** Start with the [Setup Guide](SETUP.md) for modern native installation.
+**New to GOBV1?** 
+- **Quick Start**: Follow the main [README.md](../README.md)
+- **Detailed Setup**: See [SETUP.md](SETUP.md) for complete instructions
 
-**Need legacy Docker setup?** See platform-specific guides below.
+**Already have GOBV1?**
+- **Daily Usage**: `./gob help` for all commands
+- **Web Interface**: http://localhost:50080
 
-## 📚 Documentation Index
+## 📚 Documentation
 
-### 🚀 Setup & Installation
-| Document | Description | Target Users |
-|----------|-------------|--------------|
-| **[SETUP.md](SETUP.md)** | **Modern setup** - Native conda environment | **Recommended for all users** |
-| [DEBIAN_SETUP.md](DEBIAN_SETUP.md) | Docker setup for Debian/Ubuntu systems | Legacy Docker users |
+### Setup & Installation
+| Document | Description | When to Use |
+|----------|-------------|-------------|
+| **[../README.md](../README.md)** | **Quick start guide** | **First time users** |
+| **[SETUP.md](SETUP.md)** | **Complete setup guide** | **Detailed installation** |
+| [DEBIAN_SETUP.md](DEBIAN_SETUP.md) | Legacy Docker setup | Docker deployments |
 
-### 🏗️ Architecture & Configuration
+### Architecture & System
 | Document | Description |
 |----------|-------------|
-| [DOCKER_ARCHITECTURE.md](DOCKER_ARCHITECTURE.md) | Docker build system and container architecture |
+| [DOCKER_ARCHITECTURE.md](DOCKER_ARCHITECTURE.md) | Docker build system details |
 | [AGENT_NAMING_SYSTEM.md](AGENT_NAMING_SYSTEM.md) | Dynamic agent identity system |
-| [STARTUP_ANALYSIS.md](STARTUP_ANALYSIS.md) | System startup process analysis |
+| [STARTUP_ANALYSIS.md](STARTUP_ANALYSIS.md) | System startup process |
 
-### 📝 Reference
+### Reference
 | Document | Description |
 |----------|-------------|
-| [README_SETUP.md](README_SETUP.md) | Legacy setup navigation (archived) |
+| [README_SETUP.md](README_SETUP.md) | Legacy setup guide (archived) |
 
-## 🎯 Which Guide Should I Use?
+## 🎯 Which Guide Do I Need?
 
-### For New Installations (Recommended):
-- **Start with [SETUP.md](SETUP.md)** - Modern native setup using conda
-- Easier to manage, better performance, direct file access
-- Works on Linux, macOS, and WSL2
+### 🆕 **First Time Setup**
+1. **Start**: [Main README](../README.md) ← **Start here**
+2. **Run**: `./setup.sh` (automatic)
+3. **Go**: `./gob start`
 
-### For Docker Deployments:
-- **Linux**: [DEBIAN_SETUP.md](DEBIAN_SETUP.md)
-- **Docker Architecture**: [DOCKER_ARCHITECTURE.md](DOCKER_ARCHITECTURE.md)
+### 🔧 **Advanced Setup**  
+1. **Read**: [SETUP.md](SETUP.md) ← Manual installation
+2. **Configure**: Custom environment, ports, etc.
+3. **Deploy**: Production configurations
 
-### For Advanced Configuration:
-- **Agent Naming**: [AGENT_NAMING_SYSTEM.md](AGENT_NAMING_SYSTEM.md)
-- **System Analysis**: [STARTUP_ANALYSIS.md](STARTUP_ANALYSIS.md)
+### 🐳 **Docker Deployment**
+1. **Legacy**: [DEBIAN_SETUP.md](DEBIAN_SETUP.md)
+2. **Architecture**: [DOCKER_ARCHITECTURE.md](DOCKER_ARCHITECTURE.md)
+
+## ⚡ Quick Commands
+
+```bash
+# Setup (one time)
+./setup.sh
+
+# Daily usage
+./gob start      # Start GOBV1
+./gob status     # Check status
+./gob logs       # View logs
+./gob stop       # Stop GOBV1
+./gob help       # All commands
+
+# Troubleshooting
+./gob restart    # Restart if issues
+./setup.sh       # Re-run setup
+```
 
 ## 🔧 System Requirements
 
-### Minimum Requirements:
-- **Memory**: 8GB RAM
-- **Storage**: 2GB free space
-- **OS**: Linux, macOS, or Windows 10/11
-- **Python**: 3.11+ (for native setup)
+### Minimum
+- **OS**: Linux or macOS (Windows with WSL2)  
+- **RAM**: 8GB
+- **Disk**: 2GB free space
+- **Network**: Internet connection for setup
 
-### Recommended:
-- **Memory**: 16GB RAM
+### Recommended  
+- **RAM**: 16GB
 - **CPU**: 4+ cores
-- **Storage**: 10GB free space (for Docker setups)
+- **Disk**: 10GB free space
 
-## 🚀 Access Points
+## 📍 Access Points
 
-Once GOBV1 is running:
+Once running:
+- **Web UI**: http://localhost:50080
+- **CLI**: `./gob` commands
+- **Logs**: `./gob logs` or `./gob follow`
 
-- **Web Interface**: http://localhost:50080 (native) or http://localhost:8080 (Docker)
-- **CLI Management**: Use the `gob` command (native setup)
-- **Direct Access**: SSH or container exec (Docker setups)
+## 🚨 Common Issues & Solutions
+
+### Setup Problems
+```bash
+# Setup failed
+./setup.sh                    # Try again
+
+# Conda not found  
+curl -O miniconda.sh          # Install Miniconda
+bash miniconda.sh
+source ~/.bashrc
+```
+
+### Runtime Problems
+```bash
+# Won't start
+./gob status                  # Check what's wrong
+./gob logs 50                 # Check error logs
+./gob restart                 # Try restart
+
+# Port busy
+ss -tulpn | grep 50080        # Check what's using port
+```
+
+### Environment Problems
+```bash
+# Environment missing
+conda env list                # List environments
+./setup.sh                    # Recreate environment
+
+# Dependencies broken
+conda activate gobv1
+pip install -r requirements.txt --force-reinstall
+```
 
 ## 🆘 Getting Help
 
-1. **Check the relevant setup guide** for your installation method
-2. **Review system logs**: `gob logs` (native) or `docker logs` (Docker)
-3. **Verify system status**: `gob status` or relevant status commands
-4. **Check GitHub Issues**: [Repository Issues](https://github.com/dusty-schmidt/GOB-V1.0/issues)
+1. **Check status**: `./gob status`
+2. **Check logs**: `./gob logs 50` 
+3. **Restart**: `./gob restart`
+4. **Re-setup**: `./setup.sh`
+5. **Documentation**: Browse this `docs/` directory
+6. **GitHub Issues**: [Report problems](https://github.com/dusty-schmidt/GOB-V1.0/issues)
 
-## 🔄 Migration Guide
+## 🔗 External Links
 
-**Migrating from Docker to Native Setup?**
-1. Export your configurations and data
-2. Follow the [SETUP.md](SETUP.md) guide for fresh installation
-3. Import your configurations
-4. Archive old Docker containers
-
-**Migrating from Legacy Agent Zero?**
-1. Review the [AGENT_NAMING_SYSTEM.md](AGENT_NAMING_SYSTEM.md) for new features
-2. Follow [SETUP.md](SETUP.md) for installation
-3. Configure your existing agent definitions
+- **Repository**: https://github.com/dusty-schmidt/GOB-V1.0
+- **Issues**: https://github.com/dusty-schmidt/GOB-V1.0/issues
+- **Web UI**: http://localhost:50080 (when running)
 
 ---
 
-**Repository**: [GOB-V1.0](https://github.com/dusty-schmidt/GOB-V1.0)  
-**Last Updated**: 2025-09-06  
-**Documentation Version**: 1.0
+**Ready to start?** Go to [../README.md](../README.md) and follow the Quick Start! 🚀
