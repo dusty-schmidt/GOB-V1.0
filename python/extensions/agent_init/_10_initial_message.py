@@ -54,8 +54,10 @@ class InitialMessage(Extension):
         )
     
     async def _get_personality_initial_message(self) -> str:
-        """Generate AI-powered personality-aware initial message"""
+        """Generate AI-powered personality-aware initial message using dedicated role-playing model"""
         try:
+            # Import personality system with proper path handling
+            sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "dev" / "projects" / "randomized-gob" / "src"))
             from agent_zero_integration import PersonalityAgentZeroIntegration
             
             # Get agent's memory path
@@ -138,19 +140,48 @@ Return ONLY the welcome message text, no formatting or explanations."""
             
             user_prompt = "Generate a personalized welcome message for GOB based on today's personality profile."
             
-            # Create a high-temperature model for creative welcome messages (bypassing utility model)
+            # Create a dedicated role-playing model optimized for creative character work
             import models
             from langchain_core.messages import SystemMessage, HumanMessage
             
-            # Get the utility model config but override temperature for creativity
-            creative_model = models.get_chat_model(
-                provider=self.agent.config.utility_model.provider,
-                name=self.agent.config.utility_model.name,
-                model_config=self.agent.config.utility_model,
-                temperature=0.9,  # High temperature for creativity and variety
-                top_p=0.95,       # Also increase top_p for more diverse outputs
-                **self.agent.config.utility_model.build_kwargs()
-            )
+            # Use OpenRouter with role-playing optimized models (in preference order)
+            roleplay_models = [
+                # Claude Sonnet 3.5 - Best for role-playing and character consistency
+                {"provider": "openrouter", "name": "anthropic/claude-3.5-sonnet"},
+                # GPT-4o - Excellent creative character work
+                {"provider": "openrouter", "name": "openai/gpt-4o"},
+                # Llama 3.1 405B - Great for creative writing and role-playing
+                {"provider": "openrouter", "name": "meta-llama/llama-3.1-405b-instruct"},
+                # Claude Opus - Excellent creativity (if available)
+                {"provider": "openrouter", "name": "anthropic/claude-3-opus"},
+                # Gemini Pro - Good fallback
+                {"provider": "openrouter", "name": "google/gemini-pro-1.5"},
+            ]
+            
+            roleplay_model = None
+            for model_config in roleplay_models:
+                try:
+                    roleplay_model = models.get_chat_model(
+                        provider=model_config["provider"],
+                        name=model_config["name"],
+                        temperature=0.85,    # High creativity but controlled
+                        top_p=0.9,          # Good diversity
+                        max_tokens=200,     # Limit for welcome messages
+                    )
+                    print(f"[DEBUG] Successfully created role-playing model: {model_config['provider']}/{model_config['name']}")
+                    break  # Success, use this model
+                except Exception as model_error:
+                    print(f"[DEBUG] Failed to create {model_config}: {model_error}")
+                    continue
+            
+            if not roleplay_model:
+                # Final fallback - use utility model but with high temperature
+                roleplay_model = models.get_chat_model(
+                    provider=self.agent.config.utility_model.provider,
+                    name=self.agent.config.utility_model.name,
+                    temperature=0.85,
+                    top_p=0.9,
+                )
             
             # Create messages for the creative model
             messages = [
@@ -158,8 +189,8 @@ Return ONLY the welcome message text, no formatting or explanations."""
                 HumanMessage(content=user_prompt)
             ]
             
-            # Call the creative model directly
-            generated_greeting, _ = await creative_model.unified_call(
+            # Call the dedicated role-playing model
+            generated_greeting, _ = await roleplay_model.unified_call(
                 messages=messages,
                 response_callback=None,
                 rate_limiter_callback=None
@@ -187,6 +218,12 @@ Return ONLY the welcome message text, no formatting or explanations."""
             return json.dumps(enhanced_message, indent=4)
             
         except ImportError as e:
+            print(f"[DEBUG] Personality system import error: {e}")
+            import traceback
+            traceback.print_exc()
             raise Exception(f"Personality system modules not found: {e}")
         except Exception as e:
+            print(f"[DEBUG] Personality message generation error: {e}")
+            import traceback
+            traceback.print_exc()
             raise Exception(f"Failed to generate personality message: {e}")
