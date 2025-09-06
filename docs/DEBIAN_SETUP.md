@@ -1,6 +1,8 @@
-# G-O-B Development Setup Guide for Debian Systems
+# GOBV1 Docker Setup Guide for Debian Systems
 
-This guide will walk you through setting up your development environment for the g-o-b project on Debian-based Linux systems.
+**Note**: This guide covers Docker deployment. For the recommended native setup, see [SETUP.md](SETUP.md).
+
+This guide will walk you through setting up GOBV1 using Docker on Debian-based Linux systems.
 
 ## Prerequisites
 
@@ -92,13 +94,13 @@ mkdir -p ~/Development
 cd ~/Development
 
 # Clone with SSH (if you set up SSH keys)
-git clone git@github.com:dusty-schmidt/g-o-b.git
+git clone git@github.com:dusty-schmidt/GOB-V1.0.git
 
 # OR clone with HTTPS (if using personal access token)
-git clone https://github.com/dusty-schmidt/g-o-b.git
+git clone https://github.com/dusty-schmidt/GOB-V1.0.git
 
 # Enter the project directory
-cd g-o-b
+cd GOB-V1.0
 
 # Verify you're on the main branch
 git branch -a
@@ -109,24 +111,24 @@ git status
 
 ```bash
 # Make sure you're in the project directory
-cd ~/Development/g-o-b
+cd ~/Development/GOB-V1.0
 
 # Build the Docker image
-docker build -t g-o-b-dev -f DockerfileLocal .
+docker build -t gobv1-dev -f DockerfileLocal .
 
 # Run the container with bind mount for live development
 docker run -d \
-  --name g-o-b-dev \
+  --name gobv1-dev \
   -p 50080:80 \
   -p 50022:22 \
-  -v "$(pwd):/a0" \
-  g-o-b-dev
+  -v "$(pwd):/gob" \
+  gobv1-dev
 
 # Check if it's running
 docker ps
 
 # View logs
-docker logs g-o-b-dev --tail 20
+docker logs gobv1-dev --tail 20
 ```
 
 ## 6️⃣ Verify Setup
@@ -153,8 +155,8 @@ git pull
 
 ### Starting Development Session
 ```bash
-cd ~/Development/g-o-b
-docker start g-o-b-dev
+cd ~/Development/GOB-V1.0
+docker start gobv1-dev
 # Access at http://localhost:50080
 ```
 
@@ -192,30 +194,30 @@ docker ps
 docker ps -a
 
 # View container logs
-docker logs g-o-b-dev
+docker logs gobv1-dev
 
 # Follow logs in real-time
-docker logs -f g-o-b-dev
+docker logs -f gobv1-dev
 
 # Execute commands inside container
-docker exec -it g-o-b-dev bash
+docker exec -it gobv1-dev bash
 
 # Stop container
-docker stop g-o-b-dev
+docker stop gobv1-dev
 
 # Start container
-docker start g-o-b-dev
+docker start gobv1-dev
 
 # Remove container (will need to recreate)
-docker rm g-o-b-dev
+docker rm gobv1-dev
 ```
 
 ### Rebuild Container (if needed)
 ```bash
-docker stop g-o-b-dev
-docker rm g-o-b-dev
-docker build -t g-o-b-dev -f DockerfileLocal .
-docker run -d --name g-o-b-dev -p 50080:80 -p 50022:22 -v "$(pwd):/a0" g-o-b-dev
+docker stop gobv1-dev
+docker rm gobv1-dev
+docker build -t gobv1-dev -f DockerfileLocal .
+docker run -d --name gobv1-dev -p 50080:80 -p 50022:22 -v "$(pwd):/gob" gobv1-dev
 ```
 
 ### Git Commands
@@ -239,7 +241,7 @@ git push
 ## 📁 Directory Structure
 
 Your development setup will be located at:
-- **Project Directory**: `~/Development/g-o-b/`
+- **Project Directory**: `~/Development/GOB-V1.0/`
 - **Access URL**: http://localhost:50080
 - **SSH Access**: localhost:50022 (if needed)
 
@@ -271,8 +273,8 @@ sudo usermod -aG docker $USER
 sudo netstat -tulpn | grep :50080
 
 # Remove and recreate container
-docker rm -f g-o-b-dev
-docker run -d --name g-o-b-dev -p 50080:80 -p 50022:22 -v "$(pwd):/a0" g-o-b-dev
+docker rm -f gobv1-dev
+docker run -d --name gobv1-dev -p 50080:80 -p 50022:22 -v "$(pwd):/gob" gobv1-dev
 ```
 
 ### Git Authentication Issues
@@ -285,7 +287,7 @@ ssh -T git@github.com
 
 ## 📝 Notes
 
-- The bind mount (`-v "$(pwd):/a0"`) enables live development
+- The bind mount (`-v "$(pwd):/gob"`) enables live development
 - Changes to files are immediately reflected in the running container
 - Container rebuild is only needed when Docker configuration changes
 - Use the same Git workflow on all machines for consistency
@@ -294,5 +296,6 @@ ssh -T git@github.com
 ---
 
 **Created**: 2025-09-05  
-**Project**: g-o-b (Agent Zero Fork)  
-**Repository**: https://github.com/dusty-schmidt/g-o-b
+**Updated**: 2025-09-06  
+**Project**: GOBV1 (General Orchestrator Bot V1.0)  
+**Repository**: https://github.com/dusty-schmidt/GOB-V1.0

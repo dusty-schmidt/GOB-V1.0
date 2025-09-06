@@ -1,11 +1,12 @@
-# GOB Setup Guide
+# GOBV1 Setup Guide
 
 **Updated**: 2025-09-06  
+**Version**: 1.0  
 **Approach**: Native conda environment with CLI management
 
 ## 🎯 Overview
 
-GOB (General Orchestrator Bot) is a customized fork of Agent Zero focused on orchestration and task management. This guide covers the modern native setup using conda environments and the `gob` CLI manager.
+GOBV1 (General Orchestrator Bot V1.0) is an advanced AI agent orchestration system. This guide covers the modern native setup using conda environments and the `gob` CLI manager for optimal performance and ease of use.
 
 ## 📋 Prerequisites
 
@@ -33,23 +34,23 @@ source ~/.bashrc
 conda install mamba -c conda-forge -y
 ```
 
-### 3. Clone GOB Repository
+### 3. Clone GOBV1 Repository
 
 ```bash
 # Clone the repository
-git clone https://github.com/dusty-schmidt/g-o-b.git /home/ds/GOB/gob
-cd /home/ds/GOB/gob
+git clone https://github.com/dusty-schmidt/GOB-V1.0.git /home/ds/GOB
+cd /home/ds/GOB
 ```
 
 ### 4. Create and Setup Environment
 
 ```bash
-# Create conda environment with Python 3.11
-mamba create -n gob python=3.11 -y
+# Create conda environment with Python 3.13 (using your existing setup)
+mamba create -n gobv1 python=3.13 -y
 
 # Activate the environment
 eval "$(mamba shell hook --shell bash)"
-mamba activate gob
+mamba activate gobv1
 
 # Install core dependencies via mamba (faster)
 mamba install -c conda-forge flask docker-py lxml markdown pytz psutil \
@@ -62,22 +63,22 @@ mamba install -c conda-forge matplotlib opencv-python scipy -y
 pip install -r requirements.txt
 ```
 
-### 5. Install GOB CLI Manager
+### 5. Install GOBV1 CLI Manager
 
-The GOB CLI tool should already be in the repository. Make it available system-wide:
+The GOBV1 CLI tool should already be in the repository. Make it available system-wide:
 
 ```bash
 # Make the CLI executable
-chmod +x gob
+chmod +x gob_executable
 
 # Create system-wide symlink (requires sudo)
-sudo ln -sf $(pwd)/gob /usr/local/bin/gob
+sudo ln -sf $(pwd)/gob_executable /usr/local/bin/gob
 ```
 
-### 6. Start GOB
+### 6. Start GOBV1
 
 ```bash
-# Start GOB server
+# Start GOBV1 server
 gob start
 
 # Check status
@@ -87,36 +88,36 @@ gob status
 gob logs
 ```
 
-### 7. Access GOB
+### 7. Access GOBV1
 
 Open your browser and navigate to: **http://localhost:50080**
 
 ## 🔧 CLI Commands
 
-The `gob` command provides complete management of your GOB instance:
+The `gob` command provides complete management of your GOBV1 instance:
 
 | Command | Description | Example |
 |---------|-------------|---------|
-| `gob start` | Start the GOB server | `gob start` |
-| `gob stop` | Stop the GOB server | `gob stop` |
-| `gob restart` | Restart the GOB server | `gob restart` |
+| `gob start` | Start the GOBV1 server | `gob start` |
+| `gob stop` | Stop the GOBV1 server | `gob stop` |
+| `gob restart` | Restart the GOBV1 server | `gob restart` |
 | `gob status` | Show detailed server status | `gob status` |
 | `gob logs [lines]` | Show recent log entries | `gob logs 100` |
 | `gob follow` | Follow logs in real-time | `gob follow` |
-| `gob url` | Open GOB in browser | `gob url` |
+| `gob url` | Open GOBV1 in browser | `gob url` |
 | `gob help` | Show help information | `gob help` |
 
 ## 📁 Directory Structure
 
 ```
-/home/ds/GOB/gob/                    # Main GOB directory
+/home/ds/GOB/                       # Main GOBV1 directory
 ├── docs/                            # Documentation
 ├── python/                          # Core Python application
 ├── webui/                           # Web interface files
 ├── agents/                          # AI agent definitions
 ├── scripts/                         # Utility scripts
 ├── docker/                          # Docker configs (for production)
-├── gob                             # CLI management script
+├── gob_executable                  # CLI management script
 ├── run_ui.py                       # Core Flask application
 ├── requirements.txt                # Python dependencies
 └── README.md                       # Project overview
@@ -150,11 +151,11 @@ OPENAI_API_KEY=your_openai_key
 
 ## 🚨 Troubleshooting
 
-### GOB Won't Start
+### GOBV1 Won't Start
 
 ```bash
 # Check conda environment
-mamba env list | grep gob
+mamba env list | grep gobv1
 
 # Check if port is in use
 ss -tulpn | grep 50080
@@ -170,7 +171,7 @@ gob restart
 
 ```bash
 # Reinstall dependencies in conda environment
-mamba activate gob
+mamba activate gobv1
 pip install -r requirements.txt --force-reinstall
 ```
 
@@ -200,8 +201,8 @@ ps aux | grep python | grep run_ui
 ### Starting a Development Session
 
 ```bash
-# Navigate to GOB directory
-cd /home/ds/GOB/gob
+# Navigate to GOBV1 directory
+cd /home/ds/GOB
 
 # Start GOB
 gob start
@@ -213,7 +214,7 @@ gob url
 
 ### Making Changes
 
-1. Edit files in the GOB directory
+1. Edit files in the GOBV1 directory
 2. Changes to Python files require a restart: `gob restart`
 3. Web UI changes may not require restart
 4. Monitor logs: `gob follow`
@@ -221,7 +222,7 @@ gob url
 ### Stopping Development
 
 ```bash
-# Stop GOB server
+# Stop GOBV1 server
 gob stop
 ```
 
@@ -231,10 +232,10 @@ For production deployments, you can still use Docker:
 
 ```bash
 # Build Docker image
-docker build -t gob-prod -f DockerfileLocal .
+docker build -t gobv1-prod -f DockerfileLocal .
 
 # Run production container
-docker run -d --name gob-prod -p 80:80 gob-prod
+docker run -d --name gobv1-prod -p 80:80 gobv1-prod
 ```
 
 See `docs/DOCKER_ARCHITECTURE.md` for detailed Docker deployment information.
@@ -252,7 +253,7 @@ If you're migrating from the old Docker-based setup:
 
 1. **Stop old containers**: `docker stop g-o-b g-o-b-dev`
 2. **Follow this setup guide** from step 1
-3. **Your data is preserved** in the GOB directory
+3. **Your data is preserved** in the GOBV1 directory
 4. **Old scripts are archived** in `.vault/obsolete-scripts/`
 
 ## 🆘 Getting Help
@@ -270,7 +271,7 @@ If you're migrating from the old Docker-based setup:
 After setup, verify everything works:
 
 ```bash
-# 1. Check GOB status
+# 1. Check GOBV1 status
 gob status
 
 # 2. Verify HTTP response
@@ -284,11 +285,11 @@ gob url
 ```
 
 You should see:
-- ✅ GOB status showing "running"
+- ✅ GOBV1 status showing "running"
 - ✅ HTTP 200 OK response
 - ✅ Clean startup logs
-- ✅ GOB web interface in browser
+- ✅ GOBV1 web interface in browser
 
 ---
 
-**Setup complete!** 🎉 Your GOB instance is ready for development and use.
+**Setup complete!** 🎉 Your GOBV1 instance is ready for development and use.

@@ -1,3 +1,9 @@
+# GOBV1 - Legacy Setup Documentation (ARCHIVED)
+
+**⚠️ ARCHIVED**: This document is for legacy Docker setups. For new installations, use [SETUP.md](SETUP.md) instead.
+
+## Original Documentation:
+
 # GOB (General Orchestrator Bot) - Setup Documentation
 
 ## 🚀 **Quick Start**
