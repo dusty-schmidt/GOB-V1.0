@@ -48,3 +48,4 @@ instruments/**
 # Global rule to include .gitkeep files anywhere
 !**/.gitkeep
 agent_history.gifdev/references/agent-zero/
+.gob.pid
