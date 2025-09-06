@@ -1,0 +1,25 @@
+[Unit]
+Description=GOB AI Assistant Service
+After=network.target
+
+[Service]
+Type=simple
+User=ds
+Group=ds
+WorkingDirectory=/home/ds/GOB
+Environment="PATH=/home/ds/miniconda3/envs/gobv1/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="CONDA_PREFIX=/home/ds/miniconda3/envs/gobv1"
+ExecStart=/home/ds/miniconda3/envs/gobv1/bin/python /home/ds/GOB/run_ui.py
+
+# Restart configuration
+Restart=on-failure
+RestartSec=10
+StartLimitInterval=60
+StartLimitBurst=5
+
+# Output logging
+StandardOutput=append:/home/ds/GOB/logs/gob.log
+StandardError=append:/home/ds/GOB/logs/gob-error.log
+
+[Install]
+WantedBy=multi-user.target
