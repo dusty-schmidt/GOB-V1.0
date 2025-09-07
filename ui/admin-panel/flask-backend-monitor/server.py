@@ -428,7 +428,7 @@ DASHBOARD_HTML = '''
           min-height: calc(100vh - 100px);
         }
 
-        /* GOB Header with full width and fuzzy bottom edge */
+        /* GOB Header with cyberpunk/retro terminal aesthetic */
         .gob-header {
           position: fixed;
           top: 0;
@@ -436,14 +436,25 @@ DASHBOARD_HTML = '''
           right: 0;
           width: 100%;
           height: 80px;
-          background: linear-gradient(180deg, var(--term-bg) 0%, var(--term-bg) 60%, rgba(10, 10, 10, 0.9) 75%, rgba(10, 10, 10, 0.6) 85%, rgba(10, 10, 10, 0.3) 95%, rgba(10, 10, 10, 0.1) 100%);
+          background: linear-gradient(180deg,
+            rgba(0, 0, 0, 0.95) 0%,
+            rgba(0, 0, 0, 0.9) 70%,
+            rgba(0, 0, 0, 0.7) 85%,
+            rgba(0, 0, 0, 0.4) 95%,
+            rgba(0, 0, 0, 0.1) 100%);
           display: flex;
           align-items: center;
           justify-content: space-between;
           padding: 0 40px;
           z-index: 1000;
-          box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
-          backdrop-filter: blur(12px);
+          border-bottom: 1px solid rgba(0, 255, 0, 0.2);
+          box-shadow: 0 2px 10px rgba(0, 255, 0, 0.1);
+        }
+
+        .gob-left-section {
+          display: flex;
+          align-items: center;
+          flex: 0 0 auto;
         }
 
         .gob-right-section {
@@ -489,21 +500,23 @@ DASHBOARD_HTML = '''
         }
 
         .gob-title-main {
-          color: var(--term-fg);
-          font-family: var(--term-font);
-          font-size: 20px;
-          font-weight: 600;
-          letter-spacing: 3px;
-          margin-bottom: 4px;
-          text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+          color: var(--term-accent-green);
+          font-family: 'Courier New', 'Monaco', 'Menlo', monospace;
+          font-size: 18px;
+          font-weight: 700;
+          letter-spacing: 1px;
+          margin-bottom: 2px;
+          text-shadow: 0 0 8px rgba(0, 255, 0, 0.5);
+          text-transform: uppercase;
         }
 
         .gob-title-sub {
-          color: var(--term-fg-secondary);
-          font-family: var(--term-font);
-          font-size: 13px;
-          letter-spacing: 2px;
-          opacity: 0.8;
+          color: var(--term-fg-dimmer);
+          font-family: 'Courier New', 'Monaco', 'Menlo', monospace;
+          font-size: 11px;
+          letter-spacing: 1px;
+          opacity: 0.7;
+          font-weight: 400;
         }
 
         .gob-clock {
@@ -514,17 +527,20 @@ DASHBOARD_HTML = '''
         }
 
         .gob-time {
-          color: var(--term-fg-secondary);
-          font-family: var(--term-font);
-          font-size: 15px;
-          font-weight: 500;
-          margin-bottom: 2px;
+          color: var(--term-accent-green);
+          font-family: 'Courier New', 'Monaco', 'Menlo', monospace;
+          font-size: 14px;
+          font-weight: 700;
+          margin-bottom: 1px;
+          text-shadow: 0 0 4px rgba(0, 255, 0, 0.3);
         }
 
         .gob-date {
           color: var(--term-fg-dimmer);
-          font-family: var(--term-font);
-          font-size: 11px;
+          font-family: 'Courier New', 'Monaco', 'Menlo', monospace;
+          font-size: 10px;
+          font-weight: 400;
+          opacity: 0.6;
         }
         
         /* Terminal sections layout */
@@ -824,19 +840,23 @@ DASHBOARD_HTML = '''
 
     
     <div class="container">
-        <!-- GOB Header with floating blob effect -->
+        <!-- GOB Header with cyberpunk/retro terminal aesthetic -->
         <div class="gob-header">
-            <!-- Centered title (more prominent) -->
-            <div class="gob-title-center">
-                <div class="gob-title-main">GENERAL OPERATIONS BRIDGE</div>
-                <div class="gob-title-sub">(GOB)</div>
-            </div>
-
-            <!-- Status light and clock in top right -->
-            <div class="gob-right-section">
+            <!-- Status light in top left -->
+            <div class="gob-left-section">
                 <div class="status-light-corner" id="status-light-corner">
                     <div class="status-light status-offline"></div>
                 </div>
+            </div>
+
+            <!-- Centered title with cyberpunk styling -->
+            <div class="gob-title-center">
+                <div class="gob-title-main">GENERAL_OPERATIONS_BRIDGE</div>
+                <div class="gob-title-sub">[ GOB ] v1.0</div>
+            </div>
+
+            <!-- Terminal-style clock in top right -->
+            <div class="gob-right-section">
                 <div class="gob-clock">
                     <div class="gob-time" id="current-time">--:--:--</div>
                     <div class="gob-date" id="current-date">----/--/--</div>
@@ -926,20 +946,19 @@ DASHBOARD_HTML = '''
             setInterval(updateDateTime, 1000); // Update time every second
         };
         
-        // Update datetime display for GOB header
+        // Update datetime display for GOB header with retro terminal formatting
         function updateDateTime() {
             const now = new Date();
-            const timeStr = now.toLocaleTimeString('en-US', {
-                hour12: false,
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            });
-            const dateStr = now.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit'
-            });
+
+            // Terminal-style time format: HH:MM:SS
+            const timeStr = String(now.getHours()).padStart(2, '0') + ':' +
+                           String(now.getMinutes()).padStart(2, '0') + ':' +
+                           String(now.getSeconds()).padStart(2, '0');
+
+            // Retro date format: YYYY.MM.DD
+            const dateStr = now.getFullYear() + '.' +
+                           String(now.getMonth() + 1).padStart(2, '0') + '.' +
+                           String(now.getDate()).padStart(2, '0');
 
             // Update GOB header time/date
             const timeElement = document.getElementById('current-time');
