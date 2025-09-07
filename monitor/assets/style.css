@@ -1,0 +1,155 @@
+/* GOB Network Monitor - Terminal Theme */
+/* Matching webui terminal-theme-v2.css aesthetic */
+
+:root {
+  /* Terminal Color Palette - matching webui */
+  --term-bg: #0a0a0a;
+  --term-fg: #ffffff;
+  --term-fg-secondary: #dddddd;
+  --term-fg-muted: #888888;
+  --term-fg-dim: #666666;
+  --term-fg-faint: #555555;
+  --term-fg-dimmer: #444444;
+  --term-border: #333333;
+  --term-border-subtle: #222222;
+  --term-accent-green: #00ff00;
+  --term-accent-error: #ff0000;
+  --term-accent-warning: #ffaa00;
+  
+  /* Typography - matching webui */
+  --term-font: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  --term-font-size: 13px;
+  --term-line-height: 1.4;
+}
+
+/* Global Resets - remove all modern styling */
+* {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  background-image: none !important;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--term-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--term-border);
+}
+
+/* Body and base styles */
+body {
+  font-family: var(--term-font) !important;
+  font-size: var(--term-font-size) !important;
+  line-height: var(--term-line-height) !important;
+  background: var(--term-bg) !important;
+  color: var(--term-fg) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: auto;
+}
+
+/* Remove Dash default styling */
+#react-entry-point {
+  background: var(--term-bg) !important;
+  color: var(--term-fg) !important;
+  font-family: var(--term-font) !important;
+}
+
+/* Dash app container */
+._dash-loading {
+  display: none !important;
+}
+
+/* Remove any default margins/padding from Dash components */
+div[data-dash-is-loading="true"] {
+  display: none !important;
+}
+
+/* Ensure all text uses terminal font */
+div, span, p, h1, h2, h3, h4, h5, h6 {
+  font-family: var(--term-font) !important;
+  color: inherit !important;
+}
+
+/* Remove any default button styling */
+button {
+  background: transparent !important;
+  border: 1px solid var(--term-border) !important;
+  color: var(--term-fg-dim) !important;
+  font-family: var(--term-font) !important;
+  font-size: var(--term-font-size) !important;
+  padding: 4px 8px !important;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+button:hover {
+  border-color: var(--term-fg-dimmer) !important;
+  color: var(--term-fg-secondary) !important;
+}
+
+/* Remove any default input styling */
+input, textarea {
+  background: transparent !important;
+  border: 1px solid var(--term-border) !important;
+  color: var(--term-fg) !important;
+  font-family: var(--term-font) !important;
+  font-size: var(--term-font-size) !important;
+  padding: 4px 8px !important;
+  outline: none !important;
+}
+
+input:focus, textarea:focus {
+  border-color: var(--term-fg-dimmer) !important;
+}
+
+/* Ensure proper spacing and layout */
+.dash-table-container {
+  background: transparent !important;
+  color: var(--term-fg) !important;
+  font-family: var(--term-font) !important;
+}
+
+/* Remove any loading spinners or animations */
+.dash-spinner {
+  display: none !important;
+}
+
+/* Terminal prompt styling for any code blocks */
+pre, code {
+  font-family: var(--term-font) !important;
+  background: transparent !important;
+  color: var(--term-fg-secondary) !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Ensure consistent line height throughout */
+* {
+  line-height: var(--term-line-height) !important;
+}
+
+/* Hide any default Dash branding or elements */
+._dash-error-menu {
+  display: none !important;
+}
+
+/* Ensure proper text selection colors */
+::selection {
+  background: var(--term-fg-dim);
+  color: var(--term-bg);
+}
+
+::-moz-selection {
+  background: var(--term-fg-dim);
+  color: var(--term-bg);
+}

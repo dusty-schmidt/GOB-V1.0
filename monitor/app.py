@@ -16,17 +16,22 @@ import psutil
 import socket
 from pathlib import Path
 
-# Terminal color scheme
+# Terminal color scheme - matching webui terminal-theme-v2.css
 COLORS = {
-    'bg': '#0c0c0c',           # Deep black background
-    'panel': '#1a1a1a',       # Dark panel background
+    'bg': '#0a0a0a',           # Deep black background (matches webui)
+    'panel': '#0a0a0a',       # Same as background for seamless look
     'border': '#333333',      # Border color
-    'text': '#00ff00',        # Matrix green text
-    'accent': '#00cc00',      # Bright green accent
+    'border_subtle': '#222222', # Subtle borders
+    'text': '#ffffff',        # Primary white text
+    'text_secondary': '#dddddd', # Secondary text
+    'text_muted': '#888888',  # Muted text
+    'text_dim': '#666666',    # Dim text
+    'text_faint': '#555555',  # Faint text
+    'text_dimmer': '#444444', # Dimmer text
+    'accent_green': '#00ff00', # Bright green accent
     'warning': '#ffaa00',     # Orange warning
-    'error': '#ff3333',       # Red error
+    'error': '#ff0000',       # Red error
     'info': '#00aaff',        # Blue info
-    'muted': '#666666',       # Muted text
 }
 
 # Initialize Dash app
@@ -86,69 +91,101 @@ def get_system_info():
         return None
 
 def create_status_card(title, value, status="normal", unit=""):
-    """Create a terminal-style status card"""
-    color = COLORS['text']
+    """Create a terminal-style status card matching webui aesthetic"""
+    color = COLORS['text_secondary']
     if status == "warning":
         color = COLORS['warning']
     elif status == "error":
         color = COLORS['error']
     elif status == "info":
         color = COLORS['info']
-    
+    elif status == "accent":
+        color = COLORS['accent_green']
+
+    # Clean, minimal terminal style without heavy borders
     return html.Div([
-        html.Div(f"┌─ {title} ─┐", style={'color': COLORS['border'], 'font-family': 'monospace'}),
-        html.Div(f"│ {value}{unit} │", style={
-            'color': color, 
-            'font-family': 'monospace', 
-            'font-size': '18px',
-            'font-weight': 'bold'
+        html.Div(title.upper(), style={
+            'color': COLORS['text_dimmer'],
+            'font-family': "'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
+            'font-size': '10px',
+            'margin-bottom': '3px',
+            'text-transform': 'uppercase'
         }),
-        html.Div("└─────────┘", style={'color': COLORS['border'], 'font-family': 'monospace'}),
-    ], style={'margin': '10px', 'display': 'inline-block'})
+        html.Div(f"{value}{unit}", style={
+            'color': color,
+            'font-family': "'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
+            'font-size': '16px',
+            'line-height': '1.4'
+        }),
+    ], style={'margin': '16px', 'display': 'inline-block', 'text-align': 'left'})
 
 def create_progress_bar(label, value, max_value, unit=""):
-    """Create a terminal-style progress bar"""
+    """Create a terminal-style progress bar matching webui aesthetic"""
     percentage = (value / max_value) * 100 if max_value > 0 else 0
     bar_length = 20
     filled = int((percentage / 100) * bar_length)
     bar = "█" * filled + "░" * (bar_length - filled)
-    
-    color = COLORS['text']
+
+    color = COLORS['text_secondary']
     if percentage > 80:
         color = COLORS['error']
     elif percentage > 60:
         color = COLORS['warning']
-    
-    return html.Div([
-        html.Span(f"{label}: ", style={'color': COLORS['muted'], 'font-family': 'monospace'}),
-        html.Span(f"[{bar}] ", style={'color': color, 'font-family': 'monospace'}),
-        html.Span(f"{percentage:.1f}% ({value:.1f}{unit})", 
-                 style={'color': COLORS['text'], 'font-family': 'monospace'})
-    ], style={'margin': '5px 0'})
 
-# App layout
+    font_family = "'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace"
+
+    return html.Div([
+        html.Span(f"{label.upper()}: ", style={
+            'color': COLORS['text_muted'],
+            'font-family': font_family,
+            'font-size': '13px'
+        }),
+        html.Span(f"[{bar}] ", style={
+            'color': color,
+            'font-family': font_family,
+            'font-size': '13px'
+        }),
+        html.Span(f"{percentage:.1f}% ({value:.1f}{unit})", style={
+            'color': COLORS['text_secondary'],
+            'font-family': font_family,
+            'font-size': '13px'
+        })
+    ], style={'margin': '8px 0', 'line-height': '1.4'})
+
+# App layout - matching webui terminal aesthetic
 app.layout = html.Div([
-    # Header
+    # Header with webui-style title bar
     html.Div([
-        html.H1("GOB NETWORK MONITOR", style={
-            'color': COLORS['accent'],
-            'font-family': 'monospace',
-            'text-align': 'center',
-            'margin': '20px 0',
-            'font-size': '24px',
-            'letter-spacing': '2px'
+        html.Div("GOB NETWORK MONITOR", style={
+            'color': COLORS['text_dim'],
+            'font-family': "'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
+            'font-size': '13px',
+            'margin': '0',
+            'padding': '4px 16px',
+            'position': 'fixed',
+            'top': '0',
+            'left': '0',
+            'right': '0',
+            'height': '24px',
+            'background': 'transparent',
+            'display': 'flex',
+            'align-items': 'center',
+            'z-index': '2000'
         }),
         html.Div(id='timestamp', style={
-            'color': COLORS['muted'],
-            'font-family': 'monospace',
-            'text-align': 'center',
-            'margin-bottom': '20px'
+            'color': COLORS['text_dim'],
+            'font-family': "'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
+            'font-size': '13px',
+            'position': 'fixed',
+            'top': '4px',
+            'right': '16px',
+            'z-index': '2000'
         })
     ]),
-    
-    # Main content
-    html.Div(id='main-content'),
-    
+
+    # Main content with proper spacing for title bar
+    html.Div(id='main-content', style={'margin-top': '32px'}),
+
     # Auto-refresh
     dcc.Interval(
         id='interval-component',
@@ -159,8 +196,10 @@ app.layout = html.Div([
     'backgroundColor': COLORS['bg'],
     'color': COLORS['text'],
     'min-height': '100vh',
-    'padding': '20px',
-    'font-family': 'monospace'
+    'padding': '16px',
+    'font-family': "'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
+    'font-size': '13px',
+    'line-height': '1.4'
 })
 
 @callback(
@@ -178,92 +217,136 @@ def update_dashboard(n):
     system_info = get_system_info()
     
     if core_status == "offline":
-        # Core is down - show error message
+        # Core is down - show error message in webui style
         content = html.Div([
             html.Div([
-                "╔══════════════════════════════════════╗",
-                html.Br(),
-                "║           CORE SERVICES DOWN         ║",
-                html.Br(),
-                "║                                      ║",
-                html.Br(),
-                "║  The GOB core service is not         ║",
-                html.Br(),
-                "║  responding. Check service status.   ║",
-                html.Br(),
-                "║                                      ║",
-                html.Br(),
-                "╚══════════════════════════════════════╝"
+                html.Div("CORE SERVICES DOWN", style={
+                    'color': COLORS['error'],
+                    'font-family': "'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
+                    'font-size': '16px',
+                    'margin-bottom': '8px',
+                    'text-align': 'center'
+                }),
+                html.Div("The GOB core service is not responding.", style={
+                    'color': COLORS['text_muted'],
+                    'font-family': "'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
+                    'font-size': '13px',
+                    'text-align': 'center',
+                    'margin-bottom': '16px'
+                }),
+                html.Div("Check service status with: ./manage-core.sh status", style={
+                    'color': COLORS['text_dim'],
+                    'font-family': "'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
+                    'font-size': '13px',
+                    'text-align': 'center'
+                })
             ], style={
-                'color': COLORS['error'],
-                'font-family': 'monospace',
-                'text-align': 'center',
-                'font-size': '16px',
-                'margin': '50px auto',
-                'white-space': 'pre'
+                'border': f'1px solid {COLORS["border"]}',
+                'padding': '24px',
+                'margin': '40px auto',
+                'max-width': '400px',
+                'background': COLORS['panel']
             }),
             
             # Show local system info even when core is down
             html.Div([
-                html.H3("LOCAL SYSTEM STATUS", style={
-                    'color': COLORS['info'],
-                    'font-family': 'monospace',
+                html.Div("LOCAL SYSTEM STATUS", style={
+                    'color': COLORS['text_dimmer'],
+                    'font-family': "'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
+                    'font-size': '10px',
+                    'text-transform': 'uppercase',
                     'text-align': 'center',
-                    'margin': '30px 0'
+                    'margin': '32px 0 16px 0'
                 }),
-                html.Div(id='local-system-info')
+                html.Div([
+                    create_progress_bar("CPU", system_info.get('cpu_percent', 0), 100, "%") if system_info else None,
+                    create_progress_bar("MEMORY", system_info.get('memory_percent', 0), 100, "%") if system_info else None,
+                    create_progress_bar("DISK", system_info.get('disk_percent', 0), 100, "%") if system_info else None,
+                ], style={'max-width': '400px', 'margin': '0 auto'})
             ]) if system_info else None
         ])
     else:
-        # Core is up - show full dashboard
+        # Core is up - show full dashboard in webui style
         status_indicator = "ONLINE" if core_status == "online" else "FILE"
-        status_color = COLORS['accent'] if core_status == "online" else COLORS['warning']
-        
+        status_color = COLORS['accent_green'] if core_status == "online" else COLORS['warning']
+
+        font_family = "'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace"
+
         content = html.Div([
-            # Core status header
+            # Core status in floating style like webui
             html.Div([
-                html.Span("CORE STATUS: ", style={'color': COLORS['muted']}),
-                html.Span(status_indicator, style={'color': status_color, 'font-weight': 'bold'})
-            ], style={'text-align': 'center', 'margin': '20px 0', 'font-family': 'monospace'}),
-            
-            # Core service info
-            html.Div([
-                create_status_card("SERVICE", core_data.get('service_name', 'N/A')),
-                create_status_card("VERSION", core_data.get('version', 'N/A')),
-                create_status_card("UPTIME", f"{core_data.get('uptime_seconds', 0):.0f}", unit="s"),
-                create_status_card("RESTARTS", str(core_data.get('restart_count', 0))),
-            ], style={'text-align': 'center', 'margin': '20px 0'}),
-            
-            # System metrics
-            html.Div([
-                html.H3("SYSTEM METRICS", style={
-                    'color': COLORS['info'],
-                    'font-family': 'monospace',
-                    'text-align': 'center',
-                    'margin': '30px 0'
+                html.Span("gob> ", style={
+                    'color': COLORS['text_dim'],
+                    'font-family': font_family,
+                    'font-size': '13px'
                 }),
-                create_progress_bar("CPU", core_data.get('current_cpu_percent', 0), 100, "%"),
-                create_progress_bar("MEMORY", core_data.get('current_memory_percent', 0), 100, "%"),
-                create_progress_bar("DISK", core_data.get('current_disk_percent', 0), 100, "%"),
-            ], style={'max-width': '600px', 'margin': '0 auto'}),
-            
-            # Network info
+                html.Span(f"core status: {status_indicator.lower()}", style={
+                    'color': status_color,
+                    'font-family': font_family,
+                    'font-size': '13px'
+                })
+            ], style={'margin': '16px 0'}),
+
+            # Core service info in floating panels style
             html.Div([
-                html.H3("NETWORK INFO", style={
-                    'color': COLORS['info'],
-                    'font-family': 'monospace',
-                    'text-align': 'center',
-                    'margin': '30px 0'
+                html.Div([
+                    create_status_card("service", core_data.get('service_name', 'N/A')),
+                    create_status_card("version", core_data.get('version', 'N/A')),
+                ], style={'display': 'inline-block', 'vertical-align': 'top', 'margin-right': '32px'}),
+                html.Div([
+                    create_status_card("uptime", f"{core_data.get('uptime_seconds', 0):.0f}s"),
+                    create_status_card("restarts", str(core_data.get('restart_count', 0))),
+                ], style={'display': 'inline-block', 'vertical-align': 'top'}),
+            ], style={'margin': '24px 0'}),
+            
+            # System metrics in webui style
+            html.Div([
+                html.Div("SYSTEM METRICS", style={
+                    'color': COLORS['text_dimmer'],
+                    'font-family': font_family,
+                    'font-size': '10px',
+                    'text-transform': 'uppercase',
+                    'margin': '32px 0 16px 0'
+                }),
+                create_progress_bar("cpu", core_data.get('current_cpu_percent', 0), 100, "%"),
+                create_progress_bar("memory", core_data.get('current_memory_percent', 0), 100, "%"),
+                create_progress_bar("disk", core_data.get('current_disk_percent', 0), 100, "%"),
+            ], style={'max-width': '500px', 'margin': '0 0 32px 0'}),
+
+            # Network info in webui floating style
+            html.Div([
+                html.Div("NETWORK", style={
+                    'color': COLORS['text_dimmer'],
+                    'font-family': font_family,
+                    'font-size': '10px',
+                    'text-transform': 'uppercase',
+                    'margin-bottom': '8px'
                 }),
                 html.Div([
-                    html.Span("HOSTNAME: ", style={'color': COLORS['muted']}),
-                    html.Span(core_data.get('hostname', 'N/A'), style={'color': COLORS['text']})
-                ], style={'text-align': 'center', 'margin': '10px 0'}),
+                    html.Span("hostname: ", style={
+                        'color': COLORS['text_muted'],
+                        'font-family': font_family,
+                        'font-size': '13px'
+                    }),
+                    html.Span(core_data.get('hostname', 'N/A'), style={
+                        'color': COLORS['text_secondary'],
+                        'font-family': font_family,
+                        'font-size': '13px'
+                    })
+                ], style={'margin': '4px 0'}),
                 html.Div([
-                    html.Span("LOCAL IP: ", style={'color': COLORS['muted']}),
-                    html.Span(core_data.get('local_ip', 'N/A'), style={'color': COLORS['text']})
-                ], style={'text-align': 'center', 'margin': '10px 0'}),
-            ], style={'font-family': 'monospace'}),
+                    html.Span("local_ip: ", style={
+                        'color': COLORS['text_muted'],
+                        'font-family': font_family,
+                        'font-size': '13px'
+                    }),
+                    html.Span(core_data.get('local_ip', 'N/A'), style={
+                        'color': COLORS['text_secondary'],
+                        'font-family': font_family,
+                        'font-size': '13px'
+                    })
+                ], style={'margin': '4px 0'}),
+            ], style={'margin': '0 0 32px 0'}),
         ])
     
     return content, timestamp
