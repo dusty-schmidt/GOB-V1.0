@@ -34,9 +34,59 @@ COLORS = {
     'info': '#00aaff',        # Blue info
 }
 
-# Initialize Dash app
-app = dash.Dash(__name__)
+# Initialize Dash app with assets folder
+app = dash.Dash(__name__, assets_folder='assets')
 app.title = "GOB Network Monitor"
+
+# Suppress callback exceptions for dynamic content
+app.config.suppress_callback_exceptions = True
+
+# Add custom CSS for status light animations
+app.index_string = '''
+<!DOCTYPE html>
+<html>
+    <head>
+        {%metas%}
+        <title>{%title%}</title>
+        {%favicon%}
+        {%css%}
+        <style>
+            @keyframes pulse {
+                0%, 100% {
+                    opacity: 1;
+                    text-shadow: 0 0 8px #00ff00;
+                }
+                50% {
+                    opacity: 0.7;
+                    text-shadow: 0 0 4px #00ff00;
+                }
+            }
+            .status-light-online {
+                animation: pulse 2s ease-in-out infinite !important;
+                text-shadow: 0 0 8px #00ff00 !important;
+                color: #00ff00 !important;
+            }
+            .status-light-warning {
+                text-shadow: 0 0 6px #ffaa00 !important;
+                color: #ffaa00 !important;
+            }
+            .status-light-offline {
+                text-shadow: none !important;
+                opacity: 0.3 !important;
+                color: #444444 !important;
+            }
+        </style>
+    </head>
+    <body>
+        {%app_entry%}
+        <footer>
+            {%config%}
+            {%scripts%}
+            {%renderer%}
+        </footer>
+    </body>
+</html>
+'''
 
 # Core service endpoints
 CORE_HEALTH_URL = "http://localhost:8051/health"
@@ -175,13 +225,16 @@ def create_status_header(core_data, core_status, system_info):
         html.Div([
             # Status light (retro LED style)
             html.Div([
-                html.Div("●", style={
-                    'color': light_color,
-                    'font-size': '20px',
-                    'line-height': '1',
-                    'text-shadow': f'0 0 8px {light_color}' if core_status != "offline" else 'none',
-                    'animation': 'pulse 2s ease-in-out infinite' if core_status == "online" else 'none'
-                })
+                html.Div("●",
+                    className=f'status-light-{core_status}' if core_status in ['online', 'offline'] else 'status-light-warning',
+                    style={
+                        'color': light_color,
+                        'font-size': '20px',
+                        'line-height': '1',
+                        'text-shadow': f'0 0 8px {light_color}' if core_status != "offline" else 'none',
+                        'animation': 'pulse 2s ease-in-out infinite' if core_status == "online" else 'none'
+                    }
+                )
             ], style={
                 'display': 'inline-block',
                 'margin-right': '12px',
