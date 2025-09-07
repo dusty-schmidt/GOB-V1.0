@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 import psutil
 import socket
 from pathlib import Path
+import hashlib
 
 # Terminal color scheme - matching webui terminal-theme-v2.css
 COLORS = {
@@ -40,6 +41,16 @@ app.title = "GOB Network Monitor"
 
 # Suppress callback exceptions for dynamic content
 app.config.suppress_callback_exceptions = True
+
+# Global cache for component states to prevent unnecessary re-renders
+_component_cache = {
+    'status_light_hash': None,
+    'core_status_hash': None,
+    'system_metrics_hash': None,
+    'last_status_light': None,
+    'last_core_status': None,
+    'last_system_metrics': None
+}
 
 # Add custom CSS for status light animations
 app.index_string = '''
@@ -124,7 +135,7 @@ def get_system_info():
         memory = psutil.virtual_memory()
         disk = psutil.disk_usage('/')
         boot_time = datetime.fromtimestamp(psutil.boot_time())
-        
+
         return {
             'hostname': socket.gethostname(),
             'cpu_percent': cpu_percent,
@@ -139,6 +150,17 @@ def get_system_info():
         }
     except:
         return None
+
+def create_content_hash(data):
+    """Create a hash of data to detect changes"""
+    if data is None:
+        return None
+    try:
+        # Convert data to string and create hash
+        content_str = json.dumps(data, sort_keys=True, default=str)
+        return hashlib.md5(content_str.encode()).hexdigest()
+    except:
+        return str(hash(str(data)))
 
 def create_status_card(title, value, status="normal", unit=""):
     """Create a terminal-style status card matching webui aesthetic"""
@@ -474,12 +496,15 @@ app.layout = html.Div([
         })
     ], style={'margin-top': '100px', 'padding': '16px'}),
 
-    # Auto-refresh with faster updates for real-time clock
+    # Single interval for all updates with clientside optimization
     dcc.Interval(
-        id='interval-component',
-        interval=1000,  # Update every 1 second for real-time clock
+        id='main-interval',
+        interval=1000,  # Update every 1 second
         n_intervals=0
-    )
+    ),
+
+    # Hidden div to store data for clientside callbacks
+    html.Div(id='data-store', style={'display': 'none'})
 ], style={
     'backgroundColor': COLORS['bg'],
     'color': COLORS['text'],
@@ -489,16 +514,15 @@ app.layout = html.Div([
     'line-height': '1.4'
 })
 
+# Single server-side callback to fetch all data
 @callback(
-    [Output('status-light-corner', 'children'),
-     Output('current-time', 'children'),
-     Output('current-date', 'children'),
-     Output('core-status-section', 'children'),
-     Output('system-metrics-section', 'children')],
-    [Input('interval-component', 'n_intervals')]
+    Output('data-store', 'children'),
+    [Input('main-interval', 'n_intervals')],
+    prevent_initial_call=False
 )
-def update_dashboard(n):
-    """Update the dashboard content"""
+def update_data_store(n):
+    """Fetch all data and store in hidden div"""
+    # Get current time
     now = datetime.now()
     current_time = now.strftime("%H:%M:%S")
     current_date = now.strftime("%Y-%m-%d")
@@ -507,14 +531,69 @@ def update_dashboard(n):
     core_data, core_status = get_core_status()
     system_info = get_system_info()
 
-    # Create components
-    status_light = create_status_light(core_status)
-    core_status_section = create_core_status_section(core_data, core_status)
-    system_metrics_section = create_system_metrics_section(core_data, system_info)
-    
-    return status_light, current_time, current_date, core_status_section, system_metrics_section
+    # Package all data
+    data = {
+        'timestamp': now.isoformat(),
+        'time': current_time,
+        'date': current_date,
+        'core_status': core_status,
+        'core_data': core_data,
+        'system_info': system_info
+    }
+
+    return json.dumps(data)
+
+# Callback for dashboard data updates (every 5 seconds)
+@callback(
+    [Output('status-light-corner', 'children'),
+     Output('core-status-section', 'children'),
+     Output('system-metrics-section', 'children')],
+    [Input('dashboard-interval', 'n_intervals')],
+    prevent_initial_call=False
+)
+def update_dashboard_data(n):
+    """Update the dashboard data (excluding time) with smart caching"""
+    global _component_cache
+
+    # Get core status
+    core_data, core_status = get_core_status()
+    system_info = get_system_info()
+
+    # Create content hashes to detect changes
+    status_light_hash = create_content_hash(core_status)
+    core_status_hash = create_content_hash(core_data)
+    system_metrics_hash = create_content_hash({
+        'core': core_data,
+        'system': system_info
+    })
+
+    # Only update components that have actually changed
+    status_light = _component_cache['last_status_light']
+    if status_light_hash != _component_cache['status_light_hash']:
+        status_light = create_status_light(core_status)
+        _component_cache['status_light_hash'] = status_light_hash
+        _component_cache['last_status_light'] = status_light
+
+    core_status_section = _component_cache['last_core_status']
+    if core_status_hash != _component_cache['core_status_hash']:
+        core_status_section = create_core_status_section(core_data, core_status)
+        _component_cache['core_status_hash'] = core_status_hash
+        _component_cache['last_core_status'] = core_status_section
+
+    system_metrics_section = _component_cache['last_system_metrics']
+    if system_metrics_hash != _component_cache['system_metrics_hash']:
+        system_metrics_section = create_system_metrics_section(core_data, system_info)
+        _component_cache['system_metrics_hash'] = system_metrics_hash
+        _component_cache['last_system_metrics'] = system_metrics_section
+
+    # Return cached components if no changes, or updated ones if changed
+    return (
+        status_light or create_status_light(core_status),
+        core_status_section or create_core_status_section(core_data, core_status),
+        system_metrics_section or create_system_metrics_section(core_data, system_info)
+    )
 
 if __name__ == '__main__':
     print("Starting GOB Network Monitor...")
-    print("Dashboard will be available at http://localhost:8050")
-    app.run(host='0.0.0.0', port=8050, debug=False)
+    print("Dashboard will be available at http://localhost:8052")
+    app.run(host='0.0.0.0', port=8052, debug=False)

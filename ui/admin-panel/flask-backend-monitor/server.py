@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Dict, Any, List
 
 # Add GOB root directory to Python path for imports
-gob_root = Path(__file__).parent.parent
+gob_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(gob_root))
 
 from core.state_manager import get_state_manager, shutdown_monitoring, EventType
@@ -30,7 +30,7 @@ class MonitoringServer:
     Provides web API, process management, and real-time dashboard.
     """
     
-    def __init__(self, port: int = 8050, gob_directory: str = "/home/ds/GOB", auto_open: bool = True):
+    def __init__(self, port: int = 8053, gob_directory: str = "/home/ds/GOB", auto_open: bool = True):
         self.port = port
         self.gob_directory = Path(gob_directory)
         self.auto_open = auto_open
@@ -76,7 +76,39 @@ class MonitoringServer:
         @self.app.route('/api/metrics')
         def get_metrics():
             """Get current system metrics"""
-            return jsonify(self.state_manager.current_metrics.__dict__)
+            import psutil
+            import socket
+
+            # Get system metrics
+            try:
+                cpu_percent = psutil.cpu_percent(interval=0.1)
+                memory = psutil.virtual_memory()
+                disk = psutil.disk_usage('/')
+                hostname = socket.gethostname()
+
+                # Try to get local IP
+                try:
+                    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    s.connect(("8.8.8.8", 80))
+                    local_ip = s.getsockname()[0]
+                    s.close()
+                except:
+                    local_ip = "127.0.0.1"
+
+                # Combine with state manager metrics
+                state_metrics = self.state_manager.current_metrics.__dict__
+
+                return jsonify({
+                    **state_metrics,
+                    'cpu_percent': cpu_percent,
+                    'memory_percent': memory.percent,
+                    'disk_percent': disk.percent,
+                    'hostname': hostname,
+                    'local_ip': local_ip
+                })
+            except Exception as e:
+                # Fallback to just state manager metrics
+                return jsonify(self.state_manager.current_metrics.__dict__)
         
         @self.app.route('/api/metrics/history')
         def get_metrics_history():
@@ -228,7 +260,7 @@ DASHBOARD_HTML = '''
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>GOB Monitoring Dashboard</title>
+    <title>GOB Monitor</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
@@ -388,52 +420,193 @@ DASHBOARD_HTML = '''
           color: var(--term-fg);
         }
         
-        /* Main container */
+        /* Main container - ensure content never goes under header */
         .container {
           max-width: 1400px;
           margin: 0 auto;
-          padding: 40px 20px 20px;
+          padding: 100px 20px 20px;
+          min-height: calc(100vh - 100px);
         }
-        
-        .header {
-          text-align: center;
-          margin-bottom: 30px;
-          color: var(--term-fg-secondary);
+
+        /* GOB Header with full width and fuzzy bottom edge */
+        .gob-header {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          width: 100%;
+          height: 80px;
+          background: linear-gradient(180deg, var(--term-bg) 0%, var(--term-bg) 60%, rgba(10, 10, 10, 0.9) 75%, rgba(10, 10, 10, 0.6) 85%, rgba(10, 10, 10, 0.3) 95%, rgba(10, 10, 10, 0.1) 100%);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 40px;
+          z-index: 1000;
+          box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+          backdrop-filter: blur(12px);
         }
-        
-        .header h1 {
-          font-family: var(--font-family-main);
-          margin: 0;
-          color: var(--term-fg);
-        }
-        
-        .header p {
-          margin: 5px 0 0;
-          color: var(--term-fg-muted);
-          font-size: 12px;
-        }
-        
-        /* Cards layout */
-        .cards {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+
+        .gob-right-section {
+          display: flex;
+          align-items: center;
           gap: 16px;
+          flex: 0 0 auto;
+        }
+
+        .status-light-corner {
+          display: flex;
+          align-items: center;
+        }
+
+        .status-light {
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          animation: pulse 2s infinite;
+          box-shadow: 0 0 8px currentColor;
+        }
+
+        .status-online {
+          background: var(--term-accent-green);
+          color: var(--term-accent-green);
+        }
+        .status-offline {
+          background: var(--term-fg-dim);
+          color: var(--term-fg-dim);
+        }
+        .status-error {
+          background: #ff4444;
+          color: #ff4444;
+        }
+
+        .gob-title-center {
+          flex: 1;
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .gob-title-main {
+          color: var(--term-fg);
+          font-family: var(--term-font);
+          font-size: 20px;
+          font-weight: 600;
+          letter-spacing: 3px;
+          margin-bottom: 4px;
+          text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        .gob-title-sub {
+          color: var(--term-fg-secondary);
+          font-family: var(--term-font);
+          font-size: 13px;
+          letter-spacing: 2px;
+          opacity: 0.8;
+        }
+
+        .gob-clock {
+          text-align: right;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+        }
+
+        .gob-time {
+          color: var(--term-fg-secondary);
+          font-family: var(--term-font);
+          font-size: 15px;
+          font-weight: 500;
+          margin-bottom: 2px;
+        }
+
+        .gob-date {
+          color: var(--term-fg-dimmer);
+          font-family: var(--term-font);
+          font-size: 11px;
+        }
+        
+        /* Terminal sections layout */
+        .terminal-sections {
+          display: flex;
+          flex-direction: column;
+          gap: 32px;
+          margin-top: 32px;
+        }
+
+        .terminal-section {
+          background: transparent;
+          padding: 0;
+        }
+
+        .section-title {
+          color: var(--term-fg-dimmer);
+          font-family: var(--term-font);
+          font-size: 10px;
+          text-transform: uppercase;
+          margin-bottom: 16px;
+          letter-spacing: 1px;
+        }
+
+        /* Terminal-style status cards */
+        .status-cards {
+          display: flex;
+          gap: 32px;
+          margin-bottom: 16px;
+          flex-wrap: wrap;
+        }
+
+        .status-card {
+          margin: 16px;
+          display: inline-block;
+          text-align: left;
+        }
+
+        .status-card-title {
+          color: var(--term-fg-dimmer);
+          font-family: var(--term-font);
+          font-size: 10px;
+          margin-bottom: 3px;
+          text-transform: uppercase;
+        }
+
+        .status-card-value {
+          color: var(--term-fg-secondary);
+          font-family: var(--term-font);
+          font-size: 16px;
+          line-height: 1.4;
+        }
+
+        /* Terminal progress bars */
+        .progress-bar {
           margin-bottom: 16px;
         }
-        
-        .card {
-          background: var(--color-panel-dark);
-          border: 1px solid var(--term-border);
-          padding: 16px;
-          position: relative;
-        }
-        
-        .card h3 {
-          margin: 0 0 12px 0;
-          color: var(--term-fg);
-          font-size: 14px;
-          font-weight: 500;
+
+        .progress-label {
+          color: var(--term-fg-muted);
           font-family: var(--term-font);
+          font-size: 13px;
+          margin-bottom: 4px;
+        }
+
+        .progress-visual {
+          font-family: var(--term-font);
+          font-size: 13px;
+          color: var(--term-fg-secondary);
+        }
+
+        .progress-bar-fill {
+          color: var(--term-fg-secondary);
+        }
+
+        .progress-bar-empty {
+          color: var(--term-fg-dimmer);
+        }
+
+        .progress-percentage {
+          color: var(--term-fg-secondary);
+          margin-left: 8px;
         }
         
         /* Process controls */
@@ -592,110 +765,152 @@ DASHBOARD_HTML = '''
         
         /* Responsive adjustments */
         @media (max-width: 768px) {
-          .container {
-            padding: 30px 10px 10px;
+          .gob-header {
+            height: 90px;
+            padding: 0 20px;
           }
-          
+
+          .gob-title-main {
+            font-size: 16px;
+            letter-spacing: 2px;
+          }
+
+          .gob-title-sub {
+            font-size: 11px;
+          }
+
+          .gob-time {
+            font-size: 13px;
+          }
+
+          .container {
+            padding: 110px 10px 10px;
+            min-height: calc(100vh - 110px);
+          }
+
           .cards {
             grid-template-columns: 1fr;
             gap: 12px;
           }
-          
+
           .card {
             padding: 12px;
           }
-          
+
           .metrics {
             grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        /* Extra small screens / portrait phones */
+        @media (max-width: 480px) {
+          .gob-header {
+            height: 100px;
+            padding: 0 15px;
+          }
+
+          .gob-right-section {
+            gap: 12px;
+          }
+
+          .container {
+            padding: 120px 10px 10px;
+            min-height: calc(100vh - 120px);
           }
         }
     </style>
 </head>
 <body class="dark-mode device-pointer">
-    <!-- Main Title Bar matching GOB exactly -->
-    <div class="terminal-title-bar">
-        <div class="title-bar-left">
-            <span class="title-main" id="gobMonitorTitle">GOB: Monitoring Dashboard</span>
-        </div>
-        <div class="title-bar-right">
-            <!-- Date/Time -->
-            <span class="title-datetime" id="titleDatetime">--/--/-- --:--</span>
-            
-            <!-- System Tray Icon with Dropdown -->
-            <span class="title-system-tray" onclick="toggleSystemTray()">
-                <span class="system-tray-icon">☰</span>
-                <div class="system-tray-dropdown" id="systemTrayDropdown" style="display: none;">
-                    <button class="system-tray-item" onclick="openMainGOB()">Open Main GOB</button>
-                    <button class="system-tray-item" onclick="restartProcess()">Restart GOB</button>
-                    <button class="system-tray-item" onclick="location.reload()">Refresh Dashboard</button>
-                </div>
-            </span>
-        </div>
-    </div>
+
     
     <div class="container">
-        <div class="header">
-            <h1>📊 System Monitor</h1>
-            <p>Real-time monitoring and control for the GOB multi-agent system</p>
-        </div>
-        
-        <div class="cards">
-            <!-- Process Control Card -->
-            <div class="card">
-                <h3>🎮 Process Control</h3>
-                <div id="process-status">
-                    <span class="status-indicator status-stopped"></span>
-                    <span>Loading...</span>
-                </div>
-                <div class="process-controls">
-                    <button class="btn btn-success" onclick="startProcess()">▶️ Start</button>
-                    <button class="btn btn-danger" onclick="stopProcess()">⏹️ Stop</button>
-                    <button class="btn btn-warning" onclick="restartProcess()">🔄 Restart</button>
-                </div>
-                <div id="process-info"></div>
+        <!-- GOB Header with floating blob effect -->
+        <div class="gob-header">
+            <!-- Centered title (more prominent) -->
+            <div class="gob-title-center">
+                <div class="gob-title-main">GENERAL OPERATIONS BRIDGE</div>
+                <div class="gob-title-sub">(GOB)</div>
             </div>
-            
-            <!-- System Metrics Card -->
-            <div class="card">
-                <h3>📊 System Metrics</h3>
-                <div class="metrics" id="system-metrics">
-                    <div class="metric">
-                        <div class="metric-value">--</div>
-                        <div class="metric-label">CPU %</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-value">--</div>
-                        <div class="metric-label">Memory %</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-value">--</div>
-                        <div class="metric-label">Active Agents</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-value">--</div>
-                        <div class="metric-label">Total Messages</div>
-                    </div>
+
+            <!-- Status light and clock in top right -->
+            <div class="gob-right-section">
+                <div class="status-light-corner" id="status-light-corner">
+                    <div class="status-light status-offline"></div>
                 </div>
-            </div>
-            
-            <!-- Recent Events Card -->
-            <div class="card">
-                <h3>📝 Recent Events</h3>
-                <div class="events-list" id="events-list">
-                    <div>Loading events...</div>
+                <div class="gob-clock">
+                    <div class="gob-time" id="current-time">--:--:--</div>
+                    <div class="gob-date" id="current-date">----/--/--</div>
                 </div>
             </div>
         </div>
         
-        <div class="cards">
-            <!-- Process Output Card -->
-            <div class="card" style="grid-column: 1 / -1;">
-                <h3>📄 Process Output</h3>
-                <div class="log-container" id="process-logs">
-                    <div>No output yet...</div>
+        <!-- Core Status Section -->
+        <div class="terminal-section" id="core-status-section">
+            <div class="section-title">CORE STATUS</div>
+            <div class="status-cards">
+                <div class="status-card">
+                    <div class="status-card-title">SERVICE</div>
+                    <div class="status-card-value" id="service-name">Loading...</div>
                 </div>
-                <button class="btn btn-warning" onclick="clearLogs()" style="margin-top: 10px;">🗑️ Clear Logs</button>
+                <div class="status-card">
+                    <div class="status-card-title">VERSION</div>
+                    <div class="status-card-value" id="service-version">--</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-card-title">UPTIME</div>
+                    <div class="status-card-value" id="service-uptime">--</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-card-title">RESTARTS</div>
+                    <div class="status-card-value" id="service-restarts">--</div>
+                </div>
             </div>
+            <div class="process-controls">
+                <button class="btn btn-success" onclick="startProcess()">▶️ Start</button>
+                <button class="btn btn-danger" onclick="stopProcess()">⏹️ Stop</button>
+                <button class="btn btn-warning" onclick="restartProcess()">🔄 Restart</button>
+            </div>
+        </div>
+
+        <!-- System Metrics Section -->
+        <div class="terminal-section" id="system-metrics-section">
+            <div class="section-title">SYSTEM METRICS</div>
+            <div class="progress-bar">
+                <div class="progress-label">CPU: <span class="progress-visual" id="cpu-bar">[░░░░░░░░░░░░░░░░░░░░] 0.0%</span></div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-label">MEMORY: <span class="progress-visual" id="memory-bar">[░░░░░░░░░░░░░░░░░░░░] 0.0%</span></div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-label">DISK: <span class="progress-visual" id="disk-bar">[░░░░░░░░░░░░░░░░░░░░] 0.0%</span></div>
+            </div>
+
+            <div class="section-title" style="margin-top: 24px;">NETWORK</div>
+            <div style="margin: 4px 0;">
+                <span style="color: var(--term-fg-muted); font-family: var(--term-font); font-size: 13px;">hostname: </span>
+                <span style="color: var(--term-fg-secondary); font-family: var(--term-font); font-size: 13px;" id="hostname">--</span>
+            </div>
+            <div style="margin: 4px 0;">
+                <span style="color: var(--term-fg-muted); font-family: var(--term-font); font-size: 13px;">local_ip: </span>
+                <span style="color: var(--term-fg-secondary); font-family: var(--term-font); font-size: 13px;" id="local-ip">--</span>
+            </div>
+        </div>
+
+        <!-- Events Section -->
+        <div class="terminal-section">
+            <div class="section-title">RECENT EVENTS</div>
+            <div class="events-list" id="events-list">
+                <div>Loading events...</div>
+            </div>
+        </div>
+        
+        <!-- Process Logs Section -->
+        <div class="terminal-section">
+            <div class="section-title">PROCESS OUTPUT</div>
+            <div class="log-container" id="process-logs">
+                <div>No output yet...</div>
+            </div>
+            <button class="btn btn-warning" onclick="clearLogs()" style="margin-top: 10px;">🗑️ Clear Logs</button>
         </div>
     </div>
 
@@ -711,20 +926,45 @@ DASHBOARD_HTML = '''
             setInterval(updateDateTime, 1000); // Update time every second
         };
         
-        // Update datetime display
+        // Update datetime display for GOB header
         function updateDateTime() {
             const now = new Date();
-            const dateStr = now.toLocaleDateString('en-US', { 
-                month: '2-digit', 
-                day: '2-digit', 
-                year: '2-digit' 
-            }).replace(/\//g, '/');
-            const timeStr = now.toLocaleTimeString('en-US', { 
+            const timeStr = now.toLocaleTimeString('en-US', {
                 hour12: false,
-                hour: '2-digit', 
-                minute: '2-digit'
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
             });
-            document.getElementById('titleDatetime').textContent = `${dateStr} ${timeStr}`;
+            const dateStr = now.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+
+            // Update GOB header time/date
+            const timeElement = document.getElementById('current-time');
+            const dateElement = document.getElementById('current-date');
+
+            if (timeElement && timeElement.textContent !== timeStr) {
+                timeElement.textContent = timeStr;
+            }
+            if (dateElement && dateElement.textContent !== dateStr) {
+                dateElement.textContent = dateStr;
+            }
+        }
+
+        // Create terminal-style progress bar
+        function createProgressBar(label, value, maxValue, unit = '') {
+            const percentage = maxValue > 0 ? (value / maxValue) * 100 : 0;
+            const barLength = 20;
+            const filled = Math.round((percentage / 100) * barLength);
+            const bar = '█'.repeat(filled) + '░'.repeat(barLength - filled);
+
+            let color = 'var(--term-fg-secondary)';
+            if (percentage > 80) color = '#ff0000';
+            else if (percentage > 60) color = '#ffaa00';
+
+            return `<span style="color: ${color}">[${bar}]</span> ${percentage.toFixed(1)}% (${value.toFixed(1)}${unit})`;
         }
         
         // System tray functionality
@@ -761,122 +1001,154 @@ DASHBOARD_HTML = '''
             }
         }
         
-        // Update process status
+        // Update status light and core status
         async function updateStatus() {
             const response = await fetch('/api/status');
             const data = await response.json();
-            
+
             const processInfo = data.process;
-            const statusEl = document.getElementById('process-status');
-            const infoEl = document.getElementById('process-info');
-            
-            let statusClass = 'status-stopped';
-            let statusText = processInfo.state;
-            
-            switch(processInfo.state) {
-                case 'running':
-                    statusClass = 'status-running';
-                    break;
-                case 'starting':
-                    statusClass = 'status-starting';
-                    statusText += ' (please wait...)';
-                    break;
-                case 'error':
-                case 'crashed':
+            const monitoring = data.monitoring;
+
+            // Update status light - show online if monitoring system is running
+            const statusLight = document.getElementById('status-light-corner').querySelector('.status-light');
+            let statusClass = 'status-offline';
+
+            // If monitoring system is running, show online even if no process is monitored
+            if (data.monitoring && data.monitoring.monitoring_status === 'running') {
+                statusClass = 'status-online';
+
+                // Override with process status if there are issues
+                if (processInfo.state === 'error' || processInfo.state === 'crashed') {
                     statusClass = 'status-error';
-                    break;
-                default:
-                    statusClass = 'status-stopped';
-            }
-            
-            statusEl.innerHTML = `
-                <span class="status-indicator ${statusClass}"></span>
-                <span>${statusText.toUpperCase()}</span>
-            `;
-            
-            if (processInfo.pid) {
-                infoEl.innerHTML = `
-                    <small>PID: ${processInfo.pid} | Uptime: ${Math.round(processInfo.uptime_seconds || 0)}s</small>
-                `;
+                }
             } else {
-                infoEl.innerHTML = '';
+                statusClass = 'status-offline';
             }
+
+            // Only update status light if changed
+            if (!statusLight.classList.contains(statusClass)) {
+                statusLight.className = `status-light ${statusClass}`;
+            }
+
+            // Update core status cards
+            const serviceNameEl = document.getElementById('service-name');
+            const serviceVersionEl = document.getElementById('service-version');
+            const serviceUptimeEl = document.getElementById('service-uptime');
+            const serviceRestartsEl = document.getElementById('service-restarts');
+
+            // Show monitoring system status
+            const serviceName = data.monitoring && data.monitoring.monitoring_status === 'running' ? 'GOB Monitor' : 'Offline';
+            const serviceVersion = '1.0.0';
+            const serviceUptime = data.monitoring && data.monitoring.uptime_seconds ? `${Math.round(data.monitoring.uptime_seconds)}s` : '0s';
+            const serviceRestarts = '0';
+
+            // Only update if content changed
+            if (serviceNameEl.textContent !== serviceName) serviceNameEl.textContent = serviceName;
+            if (serviceVersionEl.textContent !== serviceVersion) serviceVersionEl.textContent = serviceVersion;
+            if (serviceUptimeEl.textContent !== serviceUptime) serviceUptimeEl.textContent = serviceUptime;
+            if (serviceRestartsEl.textContent !== serviceRestarts) serviceRestartsEl.textContent = serviceRestarts;
         }
         
-        // Update system metrics
+        // Update system metrics with terminal-style progress bars
         async function updateMetrics() {
             const response = await fetch('/api/metrics');
             const metrics = await response.json();
-            
-            const metricsEl = document.getElementById('system-metrics');
-            metricsEl.innerHTML = `
-                <div class="metric">
-                    <div class="metric-value">${Math.round(metrics.cpu_percent || 0)}%</div>
-                    <div class="metric-label">CPU Usage</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value">${Math.round(metrics.memory_percent || 0)}%</div>
-                    <div class="metric-label">Memory Usage</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value">${metrics.active_agents || 0}</div>
-                    <div class="metric-label">Active Agents</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value">${metrics.total_messages || 0}</div>
-                    <div class="metric-label">Total Messages</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value">${metrics.total_tool_calls || 0}</div>
-                    <div class="metric-label">Tool Calls</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value">${metrics.total_errors || 0}</div>
-                    <div class="metric-label">Errors</div>
-                </div>
-            `;
+
+            // Update progress bars
+            const cpuBar = document.getElementById('cpu-bar');
+            const memoryBar = document.getElementById('memory-bar');
+            const diskBar = document.getElementById('disk-bar');
+            const hostnameEl = document.getElementById('hostname');
+            const localIpEl = document.getElementById('local-ip');
+
+            const cpuPercent = metrics.cpu_percent || 0;
+            const memoryPercent = metrics.memory_percent || 0;
+            const diskPercent = metrics.disk_percent || 0;
+
+            // Create terminal progress bars
+            const newCpuContent = createProgressBar('', cpuPercent, 100, '%');
+            const newMemoryContent = createProgressBar('', memoryPercent, 100, '%');
+            const newDiskContent = createProgressBar('', diskPercent, 100, '%');
+
+            // Only update if content changed
+            if (cpuBar && cpuBar.innerHTML !== newCpuContent) {
+                cpuBar.innerHTML = newCpuContent;
+            }
+            if (memoryBar && memoryBar.innerHTML !== newMemoryContent) {
+                memoryBar.innerHTML = newMemoryContent;
+            }
+            if (diskBar && diskBar.innerHTML !== newDiskContent) {
+                diskBar.innerHTML = newDiskContent;
+            }
+
+            // Update network info
+            const hostname = metrics.hostname || 'unknown';
+            const localIp = metrics.local_ip || 'N/A';
+
+            if (hostnameEl && hostnameEl.textContent !== hostname) {
+                hostnameEl.textContent = hostname;
+            }
+            if (localIpEl && localIpEl.textContent !== localIp) {
+                localIpEl.textContent = localIp;
+            }
         }
         
         // Update recent events
         async function updateEvents() {
             const response = await fetch('/api/events?limit=10');
             const events = await response.json();
-            
+
             const eventsEl = document.getElementById('events-list');
-            
+
+            let newEventsContent;
             if (events.length === 0) {
-                eventsEl.innerHTML = '<div>No events yet...</div>';
-                return;
+                newEventsContent = '<div>No events yet...</div>';
+            } else {
+                newEventsContent = events.map(event => `
+                    <div class="event">
+                        <div class="event-type">${event.event_type}</div>
+                        <div>${event.source_type}: ${event.source_id}</div>
+                        <div class="event-time">${new Date(event.timestamp).toLocaleTimeString()}</div>
+                    </div>
+                `).join('');
             }
-            
-            eventsEl.innerHTML = events.map(event => `
-                <div class="event">
-                    <div class="event-type">${event.event_type}</div>
-                    <div>${event.source_type}: ${event.source_id}</div>
-                    <div class="event-time">${new Date(event.timestamp).toLocaleTimeString()}</div>
-                </div>
-            `).join('');
+
+            // Only update if content has changed to prevent flicker
+            if (eventsEl.innerHTML !== newEventsContent) {
+                eventsEl.innerHTML = newEventsContent;
+            }
         }
         
         // Update process logs
         async function updateLogs() {
             const response = await fetch('/api/process/output?lines=20');
             const data = await response.json();
-            
+
             const logsEl = document.getElementById('process-logs');
             const allLogs = [...(data.stdout || []), ...(data.stderr || [])];
-            
+
+            let newLogsContent;
             if (allLogs.length === 0) {
-                logsEl.innerHTML = '<div>No output yet...</div>';
-                return;
+                newLogsContent = '<div>No output yet...</div>';
+            } else {
+                newLogsContent = allLogs.slice(-20).map(line =>
+                    `<div class="log-line">${escapeHtml(line)}</div>`
+                ).join('');
             }
-            
-            logsEl.innerHTML = allLogs.slice(-20).map(line => 
-                `<div class="log-line">${escapeHtml(line)}</div>`
-            ).join('');
-            
-            // Auto-scroll to bottom
-            logsEl.scrollTop = logsEl.scrollHeight;
+
+            // Only update if content has changed to prevent flicker
+            const currentScrollTop = logsEl.scrollTop;
+            const currentScrollHeight = logsEl.scrollHeight;
+            const wasAtBottom = currentScrollTop >= currentScrollHeight - logsEl.clientHeight - 5;
+
+            if (logsEl.innerHTML !== newLogsContent) {
+                logsEl.innerHTML = newLogsContent;
+
+                // Auto-scroll to bottom only if user was already at bottom
+                if (wasAtBottom) {
+                    logsEl.scrollTop = logsEl.scrollHeight;
+                }
+            }
         }
         
         // Process control functions
@@ -984,7 +1256,7 @@ if __name__ == "__main__":
     import argparse
     
     parser = argparse.ArgumentParser(description="GOB Monitoring Server")
-    parser.add_argument("--port", type=int, default=8050, help="Port to run the server on")
+    parser.add_argument("--port", type=int, default=8053, help="Port to run the server on")
     parser.add_argument("--gob-dir", default="/home/ds/GOB", help="GOB directory path")
     parser.add_argument("--no-browser", action="store_true", help="Don't auto-open browser")
     
