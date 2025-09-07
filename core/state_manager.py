@@ -15,6 +15,8 @@ import uuid
 import weakref
 import psutil
 import numpy as np
+import os
+from pathlib import Path
 
 
 class EventType(Enum):
@@ -95,6 +97,44 @@ class SystemMetrics:
     total_tokens_used: int = 0
 
 
+@dataclass
+class CoreState:
+    """Persistent core system state information"""
+    # Core service info
+    service_name: str = "gob-core"
+    version: str = "1.0.0"
+    start_time: str = ""
+    uptime_seconds: float = 0.0
+
+    # System status
+    status: str = "running"
+    health: str = "healthy"
+    last_updated: str = ""
+
+    # Performance stats
+    total_uptime_hours: float = 0.0
+    restart_count: int = 0
+    error_count: int = 0
+
+    # Current metrics snapshot
+    current_cpu_percent: float = 0.0
+    current_memory_percent: float = 0.0
+    current_disk_percent: float = 0.0
+
+    # Agent system stats
+    total_agents_created: int = 0
+    total_conversations: int = 0
+    total_messages_processed: int = 0
+
+    # Network info
+    hostname: str = ""
+    local_ip: str = ""
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for JSON serialization"""
+        return asdict(self)
+
+
 class StateManager:
     """
     Centralized state manager for monitoring the entire GOB multi-agent system.
@@ -131,6 +171,12 @@ class StateManager:
         
         # Agent references for cleanup
         self._agent_refs: Dict[str, weakref.ref] = {}
+
+        # Core state file management
+        self.state_file_path = Path("/tmp/gob-core-state.json")
+        self.core_state = CoreState()
+        self._initialize_core_state()
+        self._load_persistent_state()
         
     def start_monitoring(self):
         """Start the monitoring system with background metrics collection"""
@@ -155,17 +201,30 @@ class StateManager:
             self._running = False
             if self._monitor_thread:
                 self._monitor_thread.join(timeout=5.0)
-                
+
+            # Save final state before stopping
+            self.core_state.status = "stopped"
+            self._save_core_state()
+
             self.emit_event(EventType.SYSTEM_STATUS, "state_manager", "system", {
                 "status": "stopped"
             })
     
     def _monitor_loop(self):
         """Background monitoring loop for system metrics"""
+        last_state_save = time.time()
+
         while self._running:
             try:
                 self._collect_system_metrics()
                 self._cleanup_stale_data()
+
+                # Save core state every 30 seconds
+                current_time = time.time()
+                if current_time - last_state_save >= 30:
+                    self._save_core_state()
+                    last_state_save = current_time
+
                 time.sleep(1.0)  # Collect metrics every second
             except Exception as e:
                 self.emit_event(EventType.ERROR_OCCURRED, "state_manager", "system", {
@@ -529,6 +588,87 @@ class StateManager:
         """Remove a metrics listener callback"""
         if listener in self.metrics_listeners:
             self.metrics_listeners.remove(listener)
+
+    def _initialize_core_state(self):
+        """Initialize core state with system information"""
+        import socket
+
+        # Get hostname and IP
+        try:
+            hostname = socket.gethostname()
+            local_ip = socket.gethostbyname(hostname)
+        except:
+            hostname = "unknown"
+            local_ip = "unknown"
+
+        # Initialize core state
+        self.core_state.hostname = hostname
+        self.core_state.local_ip = local_ip
+        self.core_state.start_time = self.start_time.isoformat()
+        self.core_state.last_updated = datetime.now(timezone.utc).isoformat()
+
+    def _load_persistent_state(self):
+        """Load persistent state from file if it exists"""
+        try:
+            if self.state_file_path.exists():
+                with open(self.state_file_path, 'r') as f:
+                    data = json.load(f)
+
+                # Load restart count and total uptime
+                if 'restart_count' in data:
+                    self.core_state.restart_count = data['restart_count'] + 1
+                else:
+                    self.core_state.restart_count = 1
+
+                if 'total_uptime_hours' in data:
+                    self.core_state.total_uptime_hours = data['total_uptime_hours']
+
+                if 'total_agents_created' in data:
+                    self.core_state.total_agents_created = data['total_agents_created']
+
+                if 'total_conversations' in data:
+                    self.core_state.total_conversations = data['total_conversations']
+
+                if 'total_messages_processed' in data:
+                    self.core_state.total_messages_processed = data['total_messages_processed']
+
+        except Exception as e:
+            # If loading fails, start fresh
+            self.core_state.restart_count = 1
+
+    def _save_core_state(self):
+        """Save current core state to file"""
+        try:
+            # Update current state
+            now = datetime.now(timezone.utc)
+            self.core_state.last_updated = now.isoformat()
+            self.core_state.uptime_seconds = (now - self.start_time).total_seconds()
+
+            # Update current metrics
+            self.core_state.current_cpu_percent = self.current_metrics.cpu_percent
+            self.core_state.current_memory_percent = self.current_metrics.memory_percent
+            self.core_state.current_disk_percent = self.current_metrics.disk_percent
+
+            # Update agent stats
+            self.core_state.total_agents_created = len(self.agents)
+            self.core_state.total_conversations = len(self.conversations)
+            self.core_state.total_messages_processed = sum(a.message_count for a in self.agents.values())
+
+            # Save to file
+            with open(self.state_file_path, 'w') as f:
+                json.dump(self.core_state.to_dict(), f, indent=2)
+
+        except Exception as e:
+            # Log error but don't crash the service
+            self.emit_event(EventType.ERROR_OCCURRED, "state_manager", "system", {
+                "error": f"Failed to save core state: {str(e)}",
+                "context": "state_file_save"
+            })
+
+    def get_core_state(self) -> Dict[str, Any]:
+        """Get current core state for monitoring dashboard"""
+        self._save_core_state()  # Update state before returning
+        return self.core_state.to_dict()
 
 
 # Global state manager instance

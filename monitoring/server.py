@@ -10,9 +10,9 @@ from pathlib import Path
 from datetime import datetime
 from typing import Dict, Any, List
 
-# Add current directory to Python path for imports
-current_dir = Path(__file__).parent
-sys.path.insert(0, str(current_dir))
+# Add GOB root directory to Python path for imports
+gob_root = Path(__file__).parent.parent
+sys.path.insert(0, str(gob_root))
 
 from core.state_manager import get_state_manager, shutdown_monitoring, EventType
 from core.process_manager import ProcessManager, ProcessState
@@ -34,8 +34,8 @@ class MonitoringServer:
         self.port = port
         self.gob_directory = Path(gob_directory)
         self.auto_open = auto_open
-        
-        # Core components
+
+        # Core components - connect to existing state manager
         self.state_manager = get_state_manager()
         self.process_manager = ProcessManager(str(self.gob_directory))
         

@@ -1,0 +1,45 @@
+[Unit]
+Description=GOB Core State Manager - Foundation service for GOB multi-agent system
+Documentation=file:///home/ds/GOB/core/README.md
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ds
+Group=ds
+WorkingDirectory=/home/ds/GOB
+Environment=PATH=/home/ds/miniconda3/envs/gob-core/bin:/home/ds/miniconda3/bin:/usr/local/bin:/usr/bin:/bin
+Environment=PYTHONPATH=/home/ds/GOB
+Environment=GOB_DIRECTORY=/home/ds/GOB
+
+# Start the state manager using the wrapper script
+ExecStart=/home/ds/GOB/core/start_core.sh
+
+# Health check - simple HTTP server on port 8051
+ExecStartPost=/bin/bash -c 'sleep 5 && echo "GOB Core State Manager is ready"'
+
+# Restart settings
+Restart=always
+RestartSec=10
+StartLimitInterval=300
+StartLimitBurst=5
+
+# Resource limits
+MemoryMax=256M
+CPUQuota=25%
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gob-core
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=false
+ProtectSystem=strict
+ReadWritePaths=/home/ds/GOB/logs /home/ds/GOB/core
+
+[Install]
+WantedBy=multi-user.target

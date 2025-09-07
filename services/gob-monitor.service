@@ -1,0 +1,41 @@
+[Unit]
+Description=GOB Network Monitor - Terminal hacker style monitoring dashboard
+Documentation=https://github.com/gob/monitor
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ds
+Group=ds
+WorkingDirectory=/home/ds/GOB
+Environment=PATH=/home/ds/miniconda3/envs/gob-monitor/bin:/home/ds/miniconda3/bin:/usr/local/bin:/usr/bin:/bin
+Environment=CONDA_PREFIX=/home/ds/miniconda3/envs/gob-monitor
+
+# Start the monitor using the wrapper script
+ExecStart=/home/ds/GOB/monitor/start_monitor.sh
+
+# Restart policy
+Restart=always
+RestartSec=10
+StartLimitInterval=60
+StartLimitBurst=3
+
+# Resource limits
+MemoryMax=512M
+CPUQuota=50%
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/ds/GOB
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gob-monitor
+
+[Install]
+WantedBy=multi-user.target

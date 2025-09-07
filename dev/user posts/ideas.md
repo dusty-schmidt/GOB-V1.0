@@ -3,4 +3,5 @@
 
 -a mode where the UI theme reflects the local weather and time of the user, based on IP of the machine visiting the webui (for down the line when i share with friends)
 
--homelab lore building, 
+-homelab lore building, converting work and activity logs into narrative form
+

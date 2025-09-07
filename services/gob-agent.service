@@ -1,0 +1,36 @@
+[Unit]
+Description=GOB Agent Framework - Main AI assistant service
+Documentation=file:///home/ds/GOB/README.md
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ds
+Group=ds
+WorkingDirectory=/home/ds/GOB
+Environment="PATH=/home/ds/miniconda3/envs/gob/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="CONDA_PREFIX=/home/ds/miniconda3/envs/gob"
+Environment="PYTHONPATH=/home/ds/GOB"
+
+# No pre-checks - start independently
+
+# Start the main GOB agent framework
+ExecStart=/home/ds/miniconda3/envs/gob/bin/python /home/ds/GOB/run_ui.py
+
+# Restart configuration
+Restart=on-failure
+RestartSec=15
+StartLimitInterval=300
+StartLimitBurst=3
+
+# Resource limits
+MemoryMax=2G
+CPUQuota=200%
+
+# Output logging
+StandardOutput=append:/home/ds/GOB/logs/gob-agent.log
+StandardError=append:/home/ds/GOB/logs/gob-agent-error.log
+
+[Install]
+WantedBy=multi-user.target
